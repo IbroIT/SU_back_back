@@ -103,7 +103,6 @@ class VacancyListSerializer(LanguageAwareSerializer):
     category = CareerCategorySerializer(read_only=True)
     department = DepartmentSerializer(read_only=True)
     tags_list = serializers.SerializerMethodField()
-    salary_display = serializers.SerializerMethodField()
     is_deadline_soon = serializers.ReadOnlyField()
     is_expired = serializers.ReadOnlyField()
     
@@ -124,7 +123,6 @@ class VacancyListSerializer(LanguageAwareSerializer):
             'department',
             'location',
             'employment_type',
-            'salary_display',
             'experience_years',
             'education_level',
             'short_description',
@@ -156,9 +154,6 @@ class VacancyListSerializer(LanguageAwareSerializer):
     
     def get_tags_list(self, obj):
         return obj.get_tags_list()
-    
-    def get_salary_display(self, obj):
-        return obj.get_salary_display()
 
 
 class VacancyDetailSerializer(LanguageAwareSerializer):
@@ -169,7 +164,6 @@ class VacancyDetailSerializer(LanguageAwareSerializer):
     responsibilities_list = serializers.SerializerMethodField()
     requirements_list = serializers.SerializerMethodField()
     conditions_list = serializers.SerializerMethodField()
-    salary_display = serializers.SerializerMethodField()
     is_deadline_soon = serializers.ReadOnlyField()
     is_expired = serializers.ReadOnlyField()
     
@@ -194,9 +188,6 @@ class VacancyDetailSerializer(LanguageAwareSerializer):
             'department',
             'location',
             'employment_type',
-            'salary_min',
-            'salary_max',
-            'salary_display',
             'experience_years',
             'education_level',
             'short_description',
@@ -281,9 +272,6 @@ class VacancyDetailSerializer(LanguageAwareSerializer):
             current_language = 'ru'
         
         return obj.get_conditions_list(current_language)
-    
-    def get_salary_display(self, obj):
-        return obj.get_salary_display()
 
 
 class VacancyApplicationSerializer(serializers.ModelSerializer):
