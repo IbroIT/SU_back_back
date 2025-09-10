@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'news',
     'research',
     'careers',
-    'banner'
+    'banner',
 ]
 
 MIDDLEWARE = [

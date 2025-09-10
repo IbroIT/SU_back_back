@@ -9,7 +9,7 @@ urlpatterns = [
     path('api/', include('news.urls')),  # News API endpoints
     path('research/', include('research.urls')),  # Research API endpoints
     path('api/careers/', include('careers.urls')),  # Careers API endpoints
-    path('api/banners/', include('banner.urls')),  # Banner API endpoints - ВО МНОЖЕСТВЕННОМ ЧИСЛЕ!
+    path('api/banners/', include('banner.urls')),  # Banner API endpoints
 ]
 
 # Serve media files during development
