@@ -153,7 +153,17 @@ class VacancyListSerializer(LanguageAwareSerializer):
         return self.get_localized_field(obj, 'short_description')
     
     def get_tags_list(self, obj):
-        return obj.get_tags_list()
+        # Получаем текущий язык из запроса
+        request = self.context.get('request')
+        if request:
+            current_language = request.headers.get('Accept-Language', 'ru')
+            # Преобразуем 'ky' в 'kg' для совместимости с полями базы данных
+            if current_language == 'ky':
+                current_language = 'kg'
+        else:
+            current_language = 'ru'
+        
+        return obj.get_tags_list(current_language)
 
 
 class VacancyDetailSerializer(LanguageAwareSerializer):
@@ -241,7 +251,17 @@ class VacancyDetailSerializer(LanguageAwareSerializer):
         return self.get_localized_field(obj, 'conditions')
     
     def get_tags_list(self, obj):
-        return obj.get_tags_list()
+        # Получаем текущий язык из запроса
+        request = self.context.get('request')
+        if request:
+            current_language = request.headers.get('Accept-Language', 'ru')
+            # Преобразуем 'ky' в 'kg' для совместимости с полями базы данных
+            if current_language == 'ky':
+                current_language = 'kg'
+        else:
+            current_language = 'ru'
+        
+        return obj.get_tags_list(current_language)
     
     def get_responsibilities_list(self, obj):
         # Получаем текущий язык из запроса

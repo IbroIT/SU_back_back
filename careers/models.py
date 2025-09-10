@@ -311,11 +311,30 @@ class Vacancy(models.Model):
     )
     
     # Мета информация
+    tags_ru = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text=_('Теги через запятую (русский)'),
+        verbose_name=_('Теги (русский)')
+    )
+    tags_kg = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text=_('Теги через запятую (кыргызский)'),
+        verbose_name=_('Теги (кыргызский)')
+    )
+    tags_en = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text=_('Теги через запятую (английский)'),
+        verbose_name=_('Теги (английский)')
+    )
+    # Оставляем старое поле для обратной совместимости
     tags = models.CharField(
         max_length=500,
         blank=True,
-        help_text=_('Теги через запятую'),
-        verbose_name=_('Теги')
+        help_text=_('Теги через запятую (устаревшее поле)'),
+        verbose_name=_('Теги (устаревшее)')
     )
     status = models.CharField(
         max_length=20,
@@ -385,10 +404,31 @@ class Vacancy(models.Model):
     def get_absolute_url(self):
         return reverse('careers:vacancy_detail', kwargs={'slug': self.slug})
     
-    def get_tags_list(self):
-        """Возвращает список тегов"""
+    def get_tags_list(self, language='ru'):
+        """Возвращает список тегов для указанного языка"""
+        # Преобразуем 'ky' в 'kg' для совместимости
+        if language == 'ky':
+            language = 'kg'
+        
+        # Получаем поле тегов для указанного языка
+        tags_field = f'tags_{language}'
+        if hasattr(self, tags_field):
+            tags_value = getattr(self, tags_field)
+            if tags_value:
+                return [tag.strip() for tag in tags_value.split(',')]
+        
+        # Если нет тегов для указанного языка, попробуем русский (по умолчанию)
+        if language != 'ru' and self.tags_ru:
+            return [tag.strip() for tag in self.tags_ru.split(',')]
+        
+        # Если русских тегов тоже нет, попробуем английский
+        if language != 'en' and self.tags_en:
+            return [tag.strip() for tag in self.tags_en.split(',')]
+        
+        # Для обратной совместимости проверяем старое поле tags
         if self.tags:
             return [tag.strip() for tag in self.tags.split(',')]
+            
         return []
     
     def get_responsibilities_list(self, language='ru'):
