@@ -44,12 +44,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_filters',
+    'mptt',
     
     # Local apps
     'news',
     'research',
     'careers',
     'banner',
+    'teachers',
 ]
 
 MIDDLEWARE = [

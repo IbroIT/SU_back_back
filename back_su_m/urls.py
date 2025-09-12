@@ -10,6 +10,7 @@ urlpatterns = [
     path('research/', include('research.urls')),  # Research API endpoints
     path('api/careers/', include('careers.urls')),  # Careers API endpoints
     path('api/banners/', include('banner.urls')),  # Banner API endpoints
+    path('api/', include('teachers.urls')), # Teachers API endpoints
 ]
 
 # Serve media files during development
