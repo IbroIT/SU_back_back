@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/careers/', include('careers.urls')),  # Careers API endpoints
     path('api/banners/', include('banner.urls')),  # Banner API endpoints
     path('api/', include('teachers.urls')), # Teachers API endpoints
+    path('api/admissions/', include('admissions.urls')),  # Admissions API endpoint for email with attachments
 ]
 
 # Serve media files during development

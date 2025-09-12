@@ -12,9 +12,15 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+import dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file if it exists
+dotenv_path = os.path.join(BASE_DIR, '.env')
+if os.path.exists(dotenv_path):
+    dotenv.load_dotenv(dotenv_path)
 
 
 # Quick-start development settings - unsuitable for production
@@ -52,6 +58,7 @@ INSTALLED_APPS = [
     'careers',
     'banner',
     'teachers',
+    'admissions',
 ]
 
 MIDDLEWARE = [
@@ -188,3 +195,13 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Allow all hosts for development
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
+
+# Email configuration (development defaults). Override via environment in production.
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '0') or 0)
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@salymbekov.edu.kg')
+ADMISSIONS_EMAIL_TO = os.environ.get('ADMISSIONS_EMAIL_TO', 'adilhansatymkulov40@gmail.com')
