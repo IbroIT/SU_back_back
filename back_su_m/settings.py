@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'banner',
     'teachers',
     'admissions',
+    'hsm',
 ]
 
 MIDDLEWARE = [
