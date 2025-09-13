@@ -8,6 +8,7 @@ from pathlib import Path
 from decouple import config
 import dj_database_url
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
@@ -75,10 +76,10 @@ WSGI_APPLICATION = 'back_su_m.wsgi.application'
 # Database (PostgreSQL for Heroku)
 DATABASES = {
     'default': dj_database_url.config(
-        default=config('DATABASE_URL', default='sqlite:///' + str(BASE_DIR / 'db.sqlite3')),
-        conn_max_age=600
+        default=os.environ.get('')
     )
 }
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
