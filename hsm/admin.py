@@ -1,66 +1,5 @@
 from django.contrib import admin
-from .models import HSMInfo, Program, Faculty, Accreditation, LearningGoal
-
-
-@admin.register(HSMInfo)
-class HSMInfoAdmin(admin.ModelAdmin):
-    list_display = ['title', 'is_active', 'created_at', 'updated_at']
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['title', 'title_kg', 'title_en']
-    readonly_fields = ['created_at', 'updated_at']
-    
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('title', 'title_kg', 'title_en', 'is_active')
-        }),
-        ('Описание', {
-            'fields': ('description', 'description_kg', 'description_en')
-        }),
-        ('История', {
-            'fields': ('history', 'history_kg', 'history_en')
-        }),
-        ('Основные направления', {
-            'fields': ('main_directions', 'main_directions_kg', 'main_directions_en')
-        }),
-        ('Метаданные', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        })
-    )
-
-
-@admin.register(Program)
-class ProgramAdmin(admin.ModelAdmin):
-    list_display = ['name', 'program_type', 'study_form', 'duration_years', 'is_active', 'order']
-    list_filter = ['program_type', 'study_form', 'is_active', 'duration_years']
-    search_fields = ['name', 'name_kg', 'name_en', 'description']
-    list_editable = ['order', 'is_active']
-    readonly_fields = ['created_at', 'updated_at']
-    
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('name', 'name_kg', 'name_en', 'program_type', 'study_form')
-        }),
-        ('Длительность обучения', {
-            'fields': ('duration_years', 'duration_semesters')
-        }),
-        ('Описание программы', {
-            'fields': ('description', 'description_kg', 'description_en')
-        }),
-        ('Компетенции', {
-            'fields': ('competencies', 'competencies_kg', 'competencies_en')
-        }),
-        ('Карьерные перспективы', {
-            'fields': ('career_prospects', 'career_prospects_kg', 'career_prospects_en')
-        }),
-        ('Настройки', {
-            'fields': ('is_active', 'order')
-        }),
-        ('Метаданные', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        })
-    )
+from .models import Faculty, Accreditation
 
 
 @admin.register(Faculty)
@@ -148,41 +87,6 @@ class AccreditationAdmin(admin.ModelAdmin):
         }),
         ('Метаданные', {
             'fields': ('created_at', 'updated_at', 'is_valid'),
-            'classes': ('collapse',)
-        })
-    )
-
-
-@admin.register(LearningGoal)
-class LearningGoalAdmin(admin.ModelAdmin):
-    list_display = ['title', 'is_active', 'order', 'created_at']
-    list_filter = ['is_active', 'programs', 'created_at']
-    search_fields = ['title', 'title_kg', 'title_en', 'description']
-    list_editable = ['order', 'is_active']
-    readonly_fields = ['created_at', 'updated_at']
-    filter_horizontal = ['programs']
-    
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('title', 'title_kg', 'title_en')
-        }),
-        ('Описание', {
-            'fields': ('description', 'description_kg', 'description_en')
-        }),
-        ('Компетенции', {
-            'fields': ('competencies', 'competencies_kg', 'competencies_en')
-        }),
-        ('Карьерные перспективы', {
-            'fields': ('career_prospects', 'career_prospects_kg', 'career_prospects_en')
-        }),
-        ('Связанные программы', {
-            'fields': ('programs',)
-        }),
-        ('Настройки', {
-            'fields': ('is_active', 'order')
-        }),
-        ('Метаданные', {
-            'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         })
     )
