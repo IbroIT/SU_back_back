@@ -7,7 +7,8 @@ import os
 from pathlib import Path
 from decouple import config
 import dj_database_url
-
+from dotenv import load_dotenv
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
     'banner',
     'teachers',
     'admissions',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -152,3 +154,17 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@salymbekov.edu.kg')
 ADMISSIONS_EMAIL_TO = config('ADMISSIONS_EMAIL_TO', default='adilhansatymkulov40@gmail.com')
+
+
+
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = "eu-central-1"  # или твой регион
+AWS_QUERYSTRING_AUTH = False  # отключает подписи в ссылках
+
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
+
+STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
