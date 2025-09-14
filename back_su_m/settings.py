@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'teachers',
     'admissions',
     'hsm',
+    'infrastructure',
 ]
 
 MIDDLEWARE = [

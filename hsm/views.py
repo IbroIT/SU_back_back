@@ -2,55 +2,12 @@ from rest_framework import generics, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
-from .models import HSMInfo, Program, Faculty, Accreditation, LearningGoal
+from .models import  Faculty, Accreditation
 from .serializers import (
-    HSMInfoSerializer, ProgramSerializer, FacultySerializer, 
-    AccreditationSerializer, LearningGoalSerializer,
-    ProgramListSerializer, FacultyListSerializer
+    FacultySerializer, 
+    AccreditationSerializer, 
 )
 
-
-class HSMInfoViewSet(viewsets.ReadOnlyModelViewSet):
-    """API для получения информации о ВШМ"""
-    queryset = HSMInfo.objects.filter(is_active=True)
-    serializer_class = HSMInfoSerializer
-    
-    def get_queryset(self):
-        return HSMInfo.objects.filter(is_active=True)
-
-
-class ProgramViewSet(viewsets.ReadOnlyModelViewSet):
-    """API для программ обучения ВШМ"""
-    queryset = Program.objects.filter(is_active=True)
-    serializer_class = ProgramSerializer
-    
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return ProgramListSerializer
-        return ProgramSerializer
-    
-    def get_queryset(self):
-        queryset = Program.objects.filter(is_active=True)
-        program_type = self.request.query_params.get('type', None)
-        
-        if program_type:
-            queryset = queryset.filter(program_type=program_type)
-            
-        return queryset
-    
-    @action(detail=False, methods=['get'])
-    def bachelor(self, request):
-        """Получить программы бакалавриата"""
-        programs = Program.objects.filter(is_active=True, program_type='bachelor')
-        serializer = self.get_serializer(programs, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'])
-    def master(self, request):
-        """Получить программы магистратуры"""
-        programs = Program.objects.filter(is_active=True, program_type='master')
-        serializer = self.get_serializer(programs, many=True)
-        return Response(serializer.data)
 
 
 class FacultyViewSet(viewsets.ReadOnlyModelViewSet):
@@ -151,16 +108,3 @@ class AccreditationViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(result)
 
 
-class LearningGoalViewSet(viewsets.ReadOnlyModelViewSet):
-    """API для целей и результатов обучения ВШМ"""
-    queryset = LearningGoal.objects.filter(is_active=True)
-    serializer_class = LearningGoalSerializer
-    
-    def get_queryset(self):
-        queryset = LearningGoal.objects.filter(is_active=True)
-        program_id = self.request.query_params.get('program', None)
-        
-        if program_id:
-            queryset = queryset.filter(programs__id=program_id)
-            
-        return queryset
