@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'admissions',
     'hsm',
     'infrastructure',
+    'documents',  # Добавляем новое приложение
 ]
 
 MIDDLEWARE = [

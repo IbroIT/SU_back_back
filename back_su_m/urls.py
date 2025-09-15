@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/', include('teachers.urls')), # Teachers API endpoints
     path('api/admissions/', include('admissions.urls')),  # Admissions API endpoint for email with attachments
     path('api/infrastructure/', include('infrastructure.urls')),  # Infrastructure API endpoints
+    path('api/documents/', include('documents.urls')),  # Documents API endpoints
     path('', include('hsm.urls')),  # HSM API endpoints
 ]
 
