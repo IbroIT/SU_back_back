@@ -7,13 +7,20 @@ from django.db.models import Count, Q, Avg
 from django.utils import timezone
 from datetime import timedelta
 
-from .models import ResearchArea, ResearchCenter, Grant, Conference, Publication, GrantApplication
+from .models import (
+    ResearchArea, ResearchCenter, Grant, Conference, Publication, GrantApplication,
+    ResearchManagementPosition, ScientificCouncil, Commission,
+    ScientificJournal, JournalIssue, JournalArticle
+)
 from .serializers import (
     ResearchAreaSerializer, ResearchCenterSerializer,
     GrantListSerializer, GrantDetailSerializer,
     ConferenceSerializer, PublicationListSerializer, PublicationDetailSerializer,
     GrantApplicationCreateSerializer, GrantApplicationSerializer,
-    ResearchStatsSerializer, GrantStatsSerializer, PublicationStatsSerializer
+    ResearchStatsSerializer, GrantStatsSerializer, PublicationStatsSerializer,
+    ResearchManagementPositionSerializer, ScientificCouncilSerializer, CommissionSerializer,
+    ScientificJournalListSerializer, ScientificJournalDetailSerializer,
+    JournalIssueListSerializer, JournalIssueDetailSerializer, JournalArticleSerializer
 )
 
 
@@ -244,67 +251,214 @@ def publication_stats_by_type(request):
 @api_view(['GET'])
 def search_all(request):
     """Поиск по всем сущностям"""
-    query = request.query_params.get('q', '')
-    lang = request.query_params.get('lang', 'ru')
-    
+    query = request.GET.get('q', '')
     if not query:
-        return Response({"error": "Query parameter 'q' is required"}, status=400)
+        return Response({'error': 'Query parameter q is required'}, status=400)
     
-    # Определяем поля для поиска в зависимости от языка
-    title_field = f'title_{lang}' if lang in ['ru', 'en', 'kg'] else 'title_ru'
-    name_field = f'name_{lang}' if lang in ['ru', 'en', 'kg'] else 'name_ru'
-    desc_field = f'description_{lang}' if lang in ['ru', 'en', 'kg'] else 'description_ru'
+    # Поиск по всем моделям
+    results = {}
     
-    results = {
-        'grants': [],
-        'conferences': [],
-        'publications': [],
-        'research_areas': [],
-        'research_centers': []
-    }
-    
-    # Поиск грантов
-    grants = Grant.objects.filter(
-        Q(**{f'{title_field}__icontains': query}) |
-        Q(organization__icontains=query) |
-        Q(**{f'{desc_field}__icontains': query}),
-        is_active=True
-    )[:5]
-    results['grants'] = GrantListSerializer(grants, many=True).data
-    
-    # Поиск конференций
-    conferences = Conference.objects.filter(
-        Q(**{f'{title_field}__icontains': query}) |
-        Q(**{f'location_{lang}__icontains': query}) |
-        Q(**{f'{desc_field}__icontains': query}),
-        is_active=True
-    )[:5]
-    results['conferences'] = ConferenceSerializer(conferences, many=True).data
-    
-    # Поиск публикаций
-    publications = Publication.objects.filter(
-        Q(**{f'{title_field}__icontains': query}) |
-        Q(authors__icontains=query) |
-        Q(journal__icontains=query),
-        is_active=True
-    )[:5]
-    results['publications'] = PublicationListSerializer(publications, many=True).data
-    
-    # Поиск областей исследований
+    # Поиск в областях исследований
     areas = ResearchArea.objects.filter(
-        Q(**{f'{title_field}__icontains': query}) |
-        Q(**{f'{desc_field}__icontains': query}),
+        Q(title_ru__icontains=query) | Q(title_en__icontains=query) | Q(title_kg__icontains=query),
         is_active=True
     )[:5]
     results['research_areas'] = ResearchAreaSerializer(areas, many=True).data
     
-    # Поиск исследовательских центров
+    # Поиск в центрах
     centers = ResearchCenter.objects.filter(
-        Q(**{f'{name_field}__icontains': query}) |
-        Q(**{f'{desc_field}__icontains': query}) |
-        Q(director__icontains=query),
+        Q(name_ru__icontains=query) | Q(name_en__icontains=query) | Q(name_kg__icontains=query),
         is_active=True
     )[:5]
     results['research_centers'] = ResearchCenterSerializer(centers, many=True).data
     
+    # Поиск в грантах
+    grants = Grant.objects.filter(
+        Q(title_ru__icontains=query) | Q(title_en__icontains=query) | Q(title_kg__icontains=query),
+        is_active=True
+    )[:5]
+    results['grants'] = GrantListSerializer(grants, many=True).data
+    
+    # Поиск в конференциях
+    conferences = Conference.objects.filter(
+        Q(title_ru__icontains=query) | Q(title_en__icontains=query) | Q(title_kg__icontains=query),
+        is_active=True
+    )[:5]
+    results['conferences'] = ConferenceSerializer(conferences, many=True).data
+    
+    # Поиск в публикациях
+    publications = Publication.objects.filter(
+        Q(title_ru__icontains=query) | Q(title_en__icontains=query) | Q(title_kg__icontains=query) |
+        Q(authors_ru__icontains=query) | Q(authors_en__icontains=query) | Q(authors_kg__icontains=query),
+        is_active=True
+    )[:5]
+    results['publications'] = PublicationListSerializer(publications, many=True).data
+    
     return Response(results)
+
+
+# Новые ViewSet'ы для научного управления
+class ResearchManagementPositionViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для должностей в научном управлении"""
+    queryset = ResearchManagementPosition.objects.filter(is_active=True, parent__isnull=True).order_by('position_type', 'order', 'title_ru')
+    serializer_class = ResearchManagementPositionSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['position_type']
+    search_fields = ['title_ru', 'title_en', 'title_kg', 'full_name_ru', 'full_name_en', 'full_name_kg']
+    ordering_fields = ['order', 'title_ru']
+    ordering = ['position_type', 'order', 'title_ru']
+
+    @action(detail=False, methods=['get'])
+    def by_type(self, request):
+        """Группировка по типам должностей"""
+        position_types = {}
+        positions = ResearchManagementPosition.objects.filter(is_active=True).order_by('position_type', 'order', 'title_ru')
+        
+        for position in positions:
+            pos_type = position.position_type
+            if pos_type not in position_types:
+                position_types[pos_type] = {
+                    'type': pos_type,
+                    'type_display': position.get_position_type_display(),
+                    'positions': []
+                }
+            position_types[pos_type]['positions'].append(
+                ResearchManagementPositionSerializer(position, context=self.get_serializer_context()).data
+            )
+        
+        return Response(list(position_types.values()))
+
+
+class ScientificCouncilViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для научных советов"""
+    queryset = ScientificCouncil.objects.filter(is_active=True).order_by('name_ru')
+    serializer_class = ScientificCouncilSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name_ru', 'name_en', 'name_kg', 'chairman_ru', 'chairman_en', 'chairman_kg']
+    ordering_fields = ['name_ru']
+
+
+class CommissionViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для комиссий"""
+    queryset = Commission.objects.filter(is_active=True).order_by('commission_type', 'name_ru')
+    serializer_class = CommissionSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['commission_type']
+    search_fields = ['name_ru', 'name_en', 'name_kg', 'chairman_ru', 'chairman_en', 'chairman_kg']
+    ordering_fields = ['name_ru']
+
+    @action(detail=False, methods=['get'])
+    def by_type(self, request):
+        """Группировка по типам комиссий"""
+        commission_types = {}
+        commissions = Commission.objects.filter(is_active=True).order_by('commission_type', 'name_ru')
+        
+        for commission in commissions:
+            comm_type = commission.commission_type
+            if comm_type not in commission_types:
+                commission_types[comm_type] = {
+                    'type': comm_type,
+                    'type_display': commission.get_commission_type_display(),
+                    'commissions': []
+                }
+            commission_types[comm_type]['commissions'].append(
+                CommissionSerializer(commission, context=self.get_serializer_context()).data
+            )
+        
+        return Response(list(commission_types.values()))
+
+
+# ViewSet'ы для научных журналов
+class ScientificJournalViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для научных журналов"""
+    queryset = ScientificJournal.objects.filter(is_active=True).order_by('title_ru')
+    permission_classes = [AllowAny]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title_ru', 'title_en', 'title_kg', 'description_ru', 'description_en', 'description_kg']
+    ordering_fields = ['title_ru', 'established_year', 'impact_factor']
+    ordering = ['title_ru']
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ScientificJournalDetailSerializer
+        return ScientificJournalListSerializer
+
+    @action(detail=False, methods=['get'])
+    def featured(self, request):
+        """Основные журналы университета"""
+        journals = self.get_queryset().filter(impact_factor__isnull=False).order_by('-impact_factor')[:3]
+        serializer = ScientificJournalListSerializer(journals, many=True, context=self.get_serializer_context())
+        return Response(serializer.data)
+
+
+class JournalIssueViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для выпусков журналов"""
+    queryset = JournalIssue.objects.filter(is_published=True, is_active=True).order_by('-year', '-volume', '-number')
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['journal', 'year', 'volume']
+    search_fields = ['title_ru', 'title_en', 'title_kg', 'description_ru', 'description_en', 'description_kg']
+    ordering_fields = ['year', 'volume', 'number', 'publication_date']
+    ordering = ['-year', '-volume', '-number']
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return JournalIssueDetailSerializer
+        return JournalIssueListSerializer
+
+    @action(detail=False, methods=['get'])
+    def by_journal(self, request):
+        """Выпуски по журналам"""
+        journal_id = request.GET.get('journal_id')
+        if not journal_id:
+            return Response({'error': 'journal_id parameter is required'}, status=400)
+        
+        issues = self.get_queryset().filter(journal_id=journal_id)
+        
+        # Группировка по годам
+        years_data = {}
+        for issue in issues:
+            year = issue.year
+            if year not in years_data:
+                years_data[year] = []
+            years_data[year].append(JournalIssueListSerializer(issue, context=self.get_serializer_context()).data)
+        
+        # Преобразуем в список для удобства фронтенда
+        result = [{'year': year, 'issues': issues} for year, issues in sorted(years_data.items(), reverse=True)]
+        return Response(result)
+
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """Недавние выпуски"""
+        issues = self.get_queryset()[:10]
+        serializer = JournalIssueListSerializer(issues, many=True, context=self.get_serializer_context())
+        return Response(serializer.data)
+
+
+class JournalArticleViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для статей журналов"""
+    queryset = JournalArticle.objects.filter(is_active=True, issue__is_published=True).order_by('-issue__year', '-issue__volume', '-issue__number', 'order')
+    serializer_class = JournalArticleSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['issue', 'issue__journal', 'is_open_access']
+    search_fields = ['title_ru', 'title_en', 'title_kg', 'authors_ru', 'authors_en', 'authors_kg', 'abstract_ru', 'abstract_en', 'abstract_kg']
+    ordering_fields = ['published_date', 'citations_count', 'pages_start']
+    ordering = ['-issue__year', '-issue__volume', '-issue__number', 'order']
+
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """Недавние статьи"""
+        articles = self.get_queryset()[:10]
+        serializer = JournalArticleSerializer(articles, many=True, context=self.get_serializer_context())
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def most_cited(self, request):
+        """Наиболее цитируемые статьи"""
+        articles = self.get_queryset().filter(citations_count__gt=0).order_by('-citations_count')[:10]
+        serializer = JournalArticleSerializer(articles, many=True, context=self.get_serializer_context())
+        return Response(serializer.data)

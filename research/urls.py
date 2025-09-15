@@ -10,6 +10,16 @@ router.register(r'grants', views.GrantViewSet, basename='grant')
 router.register(r'conferences', views.ConferenceViewSet, basename='conference')
 router.register(r'publications', views.PublicationViewSet, basename='publication')
 
+# Новые ViewSets для научного управления
+router.register(r'management', views.ResearchManagementPositionViewSet, basename='researchmanagement')
+router.register(r'councils', views.ScientificCouncilViewSet, basename='scientificcouncil')
+router.register(r'commissions', views.CommissionViewSet, basename='commission')
+
+# ViewSets для научных журналов
+router.register(r'journals', views.ScientificJournalViewSet, basename='scientificjournal')
+router.register(r'journal-issues', views.JournalIssueViewSet, basename='journalissue')
+router.register(r'journal-articles', views.JournalArticleViewSet, basename='journalarticle')
+
 app_name = 'research'
 
 urlpatterns = [

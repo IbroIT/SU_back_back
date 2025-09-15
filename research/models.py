@@ -282,3 +282,298 @@ class GrantApplication(models.Model):
         
     def __str__(self):
         return f"{self.project_title} - {self.principal_investigator}"
+
+
+class ResearchManagementPosition(models.Model):
+    """Должности в научном управлении"""
+    POSITION_TYPE_CHOICES = [
+        ('leadership', 'Руководство'),
+        ('institute', 'Институт'),
+        ('center', 'Центр'),
+        ('department', 'Кафедра'),
+        ('council', 'Научный совет'),
+        ('commission', 'Комиссия'),
+    ]
+
+    title_ru = models.CharField("Должность (рус)", max_length=200)
+    title_en = models.CharField("Должность (англ)", max_length=200)
+    title_kg = models.CharField("Должность (кыр)", max_length=200)
+    
+    full_name_ru = models.CharField("ФИО (рус)", max_length=200)
+    full_name_en = models.CharField("ФИО (англ)", max_length=200)
+    full_name_kg = models.CharField("ФИО (кыр)", max_length=200)
+    
+    position_type = models.CharField("Тип должности", max_length=20, choices=POSITION_TYPE_CHOICES)
+    
+    bio_ru = models.TextField("Биография (рус)", blank=True)
+    bio_en = models.TextField("Биография (англ)", blank=True)
+    bio_kg = models.TextField("Биография (кыр)", blank=True)
+    
+    education_ru = models.TextField("Образование (рус)", blank=True)
+    education_en = models.TextField("Образование (англ)", blank=True)
+    education_kg = models.TextField("Образование (кыр)", blank=True)
+    
+    scientific_interests_ru = models.TextField("Научные интересы (рус)", blank=True)
+    scientific_interests_en = models.TextField("Научные интересы (англ)", blank=True)
+    scientific_interests_kg = models.TextField("Научные интересы (кыр)", blank=True)
+    
+    contact_email = models.EmailField("Email", blank=True)
+    contact_phone = models.CharField("Телефон", max_length=20, blank=True)
+    office_location = models.CharField("Кабинет", max_length=100, blank=True)
+    
+    photo = models.ImageField("Фотография", upload_to='research/management/', blank=True)
+    
+    order = models.PositiveIntegerField("Порядок отображения", default=0)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, verbose_name="Подчиняется")
+    
+    is_active = models.BooleanField("Активно", default=True)
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Должность в научном управлении"
+        verbose_name_plural = "Должности в научном управлении"
+        ordering = ['position_type', 'order', 'title_ru']
+        
+    def __str__(self):
+        return f"{self.title_ru} - {self.full_name_ru}"
+    
+    def get_children(self):
+        """Получить подчиненных"""
+        return self.__class__.objects.filter(parent=self, is_active=True).order_by('order', 'title_ru')
+
+
+class ScientificCouncil(models.Model):
+    """Научные советы"""
+    name_ru = models.CharField("Название (рус)", max_length=200)
+    name_en = models.CharField("Название (англ)", max_length=200)
+    name_kg = models.CharField("Название (кыр)", max_length=200)
+    
+    description_ru = models.TextField("Описание (рус)")
+    description_en = models.TextField("Описание (англ)")
+    description_kg = models.TextField("Описание (кыр)")
+    
+    chairman_ru = models.CharField("Председатель (рус)", max_length=200)
+    chairman_en = models.CharField("Председатель (англ)", max_length=200)
+    chairman_kg = models.CharField("Председатель (кыр)", max_length=200)
+    
+    secretary_ru = models.CharField("Секретарь (рус)", max_length=200, blank=True)
+    secretary_en = models.CharField("Секретарь (англ)", max_length=200, blank=True)
+    secretary_kg = models.CharField("Секретарь (кыр)", max_length=200, blank=True)
+    
+    members_ru = models.JSONField("Члены совета (рус)", default=list)
+    members_en = models.JSONField("Члены совета (англ)", default=list)
+    members_kg = models.JSONField("Члены совета (кыр)", default=list)
+    
+    responsibilities_ru = models.TextField("Функции и обязанности (рус)", blank=True)
+    responsibilities_en = models.TextField("Функции и обязанности (англ)", blank=True)
+    responsibilities_kg = models.TextField("Функции и обязанности (кыр)", blank=True)
+    
+    meeting_schedule_ru = models.CharField("График заседаний (рус)", max_length=200, blank=True)
+    meeting_schedule_en = models.CharField("График заседаний (англ)", max_length=200, blank=True)
+    meeting_schedule_kg = models.CharField("График заседаний (кыр)", max_length=200, blank=True)
+    
+    contact_email = models.EmailField("Email", blank=True)
+    contact_phone = models.CharField("Телефон", max_length=20, blank=True)
+    
+    is_active = models.BooleanField("Активно", default=True)
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Научный совет"
+        verbose_name_plural = "Научные советы"
+        ordering = ['name_ru']
+        
+    def __str__(self):
+        return self.name_ru
+
+
+class Commission(models.Model):
+    """Комиссии"""
+    COMMISSION_TYPE_CHOICES = [
+        ('ethics', 'Этическая комиссия'),
+        ('qualification', 'Квалификационная комиссия'),
+        ('publication', 'Издательская комиссия'),
+        ('grant', 'Грантовая комиссия'),
+        ('dissertation', 'Диссертационная комиссия'),
+        ('other', 'Другое'),
+    ]
+    
+    name_ru = models.CharField("Название (рус)", max_length=200)
+    name_en = models.CharField("Название (англ)", max_length=200)
+    name_kg = models.CharField("Название (кыр)", max_length=200)
+    
+    commission_type = models.CharField("Тип комиссии", max_length=20, choices=COMMISSION_TYPE_CHOICES)
+    
+    description_ru = models.TextField("Описание (рус)")
+    description_en = models.TextField("Описание (англ)")
+    description_kg = models.TextField("Описание (кыр)")
+    
+    chairman_ru = models.CharField("Председатель (рус)", max_length=200)
+    chairman_en = models.CharField("Председатель (англ)", max_length=200)
+    chairman_kg = models.CharField("Председатель (кыр)", max_length=200)
+    
+    members_ru = models.JSONField("Члены комиссии (рус)", default=list)
+    members_en = models.JSONField("Члены комиссии (англ)", default=list)
+    members_kg = models.JSONField("Члены комиссии (кыр)", default=list)
+    
+    functions_ru = models.TextField("Функции (рус)", blank=True)
+    functions_en = models.TextField("Функции (англ)", blank=True)
+    functions_kg = models.TextField("Функции (кыр)", blank=True)
+    
+    contact_email = models.EmailField("Email", blank=True)
+    contact_phone = models.CharField("Телефон", max_length=20, blank=True)
+    
+    is_active = models.BooleanField("Активно", default=True)
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Комиссия"
+        verbose_name_plural = "Комиссии"
+        ordering = ['commission_type', 'name_ru']
+        
+    def __str__(self):
+        return self.name_ru
+
+
+class ScientificJournal(models.Model):
+    """Научные журналы университета"""
+    title_ru = models.CharField("Название (рус)", max_length=300)
+    title_en = models.CharField("Название (англ)", max_length=300)
+    title_kg = models.CharField("Название (кыр)", max_length=300)
+    
+    description_ru = models.TextField("Описание (рус)")
+    description_en = models.TextField("Описание (англ)")
+    description_kg = models.TextField("Описание (кыр)")
+    
+    issn = models.CharField("ISSN", max_length=20, blank=True)
+    eissn = models.CharField("E-ISSN", max_length=20, blank=True)
+    
+    editor_in_chief_ru = models.CharField("Главный редактор (рус)", max_length=200)
+    editor_in_chief_en = models.CharField("Главный редактор (англ)", max_length=200)
+    editor_in_chief_kg = models.CharField("Главный редактор (кыр)", max_length=200)
+    
+    editorial_board_ru = models.JSONField("Редакционная коллегия (рус)", default=list)
+    editorial_board_en = models.JSONField("Редакционная коллегия (англ)", default=list)
+    editorial_board_kg = models.JSONField("Редакционная коллегия (кыр)", default=list)
+    
+    publication_frequency_ru = models.CharField("Периодичность (рус)", max_length=100)
+    publication_frequency_en = models.CharField("Периодичность (англ)", max_length=100)
+    publication_frequency_kg = models.CharField("Периодичность (кыр)", max_length=100)
+    
+    scope_ru = models.TextField("Тематика (рус)", blank=True)
+    scope_en = models.TextField("Тематика (англ)", blank=True)
+    scope_kg = models.TextField("Тематика (кыр)", blank=True)
+    
+    submission_guidelines_ru = models.TextField("Требования к публикации (рус)", blank=True)
+    submission_guidelines_en = models.TextField("Требования к публикации (англ)", blank=True)
+    submission_guidelines_kg = models.TextField("Требования к публикации (кыр)", blank=True)
+    
+    cover_image = models.ImageField("Обложка", upload_to='research/journals/', blank=True)
+    website = models.URLField("Веб-сайт", blank=True)
+    contact_email = models.EmailField("Email", blank=True)
+    
+    established_year = models.IntegerField("Год основания")
+    impact_factor = models.DecimalField("Импакт-фактор", max_digits=5, decimal_places=3, null=True, blank=True)
+    
+    is_open_access = models.BooleanField("Открытый доступ", default=True)
+    is_peer_reviewed = models.BooleanField("Рецензируемый", default=True)
+    is_active = models.BooleanField("Активно", default=True)
+    
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Научный журнал"
+        verbose_name_plural = "Научные журналы"
+        ordering = ['title_ru']
+        
+    def __str__(self):
+        return self.title_ru
+
+
+class JournalIssue(models.Model):
+    """Выпуски журналов"""
+    journal = models.ForeignKey(ScientificJournal, on_delete=models.CASCADE, related_name='issues', verbose_name="Журнал")
+    
+    volume = models.PositiveIntegerField("Том")
+    number = models.PositiveIntegerField("Номер")
+    year = models.PositiveIntegerField("Год")
+    
+    title_ru = models.CharField("Название выпуска (рус)", max_length=300, blank=True)
+    title_en = models.CharField("Название выпуска (англ)", max_length=300, blank=True)
+    title_kg = models.CharField("Название выпуска (кыр)", max_length=300, blank=True)
+    
+    publication_date = models.DateField("Дата публикации")
+    
+    description_ru = models.TextField("Описание (рус)", blank=True)
+    description_en = models.TextField("Описание (англ)", blank=True)
+    description_kg = models.TextField("Описание (кыр)", blank=True)
+    
+    cover_image = models.ImageField("Обложка выпуска", upload_to='research/journal_issues/', blank=True)
+    pdf_file = models.FileField("PDF файл", upload_to='research/journal_issues/pdf/', blank=True)
+    
+    doi = models.CharField("DOI выпуска", max_length=100, blank=True)
+    pages_count = models.PositiveIntegerField("Количество страниц", null=True, blank=True)
+    articles_count = models.PositiveIntegerField("Количество статей", default=0)
+    
+    is_published = models.BooleanField("Опубликован", default=False)
+    is_active = models.BooleanField("Активно", default=True)
+    
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    updated_at = models.DateTimeField("Обновлено", auto_now=True)
+    
+    class Meta:
+        verbose_name = "Выпуск журнала"
+        verbose_name_plural = "Выпуски журналов"
+        ordering = ['-year', '-volume', '-number']
+        unique_together = ['journal', 'volume', 'number', 'year']
+        
+    def __str__(self):
+        return f"{self.journal.title_ru} - Том {self.volume}, №{self.number} ({self.year})"
+
+
+class JournalArticle(models.Model):
+    """Статьи в журналах"""
+    issue = models.ForeignKey(JournalIssue, on_delete=models.CASCADE, related_name='articles', verbose_name="Выпуск")
+    
+    title_ru = models.CharField("Название (рус)", max_length=500)
+    title_en = models.CharField("Название (англ)", max_length=500)
+    title_kg = models.CharField("Название (кыр)", max_length=500)
+    
+    authors_ru = models.CharField("Авторы (рус)", max_length=500)
+    authors_en = models.CharField("Авторы (англ)", max_length=500)
+    authors_kg = models.CharField("Авторы (кыр)", max_length=500)
+    
+    abstract_ru = models.TextField("Аннотация (рус)")
+    abstract_en = models.TextField("Аннотация (англ)")
+    abstract_kg = models.TextField("Аннотация (кыр)")
+    
+    keywords_ru = models.JSONField("Ключевые слова (рус)", default=list)
+    keywords_en = models.JSONField("Ключевые слова (англ)", default=list)
+    keywords_kg = models.JSONField("Ключевые слова (кыр)", default=list)
+    
+    pages_start = models.PositiveIntegerField("Страница начала")
+    pages_end = models.PositiveIntegerField("Страница окончания")
+    
+    doi = models.CharField("DOI статьи", max_length=100, blank=True)
+    pdf_file = models.FileField("PDF файл статьи", upload_to='research/journal_articles/', blank=True)
+    
+    received_date = models.DateField("Дата поступления", null=True, blank=True)
+    accepted_date = models.DateField("Дата принятия", null=True, blank=True)
+    published_date = models.DateField("Дата публикации", null=True, blank=True)
+    
+    citations_count = models.PositiveIntegerField("Количество цитирований", default=0)
+    
+    order = models.PositiveIntegerField("Порядок в выпуске", default=0)
+    
+    is_open_access = models.BooleanField("Открытый доступ", default=True)
+    is_active = models.BooleanField("Активно", default=True)
+    
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Статья журнала"
+        verbose_name_plural = "Статьи журналов"
+        ordering = ['issue', 'order', 'pages_start']
+        
+    def __str__(self):
+        return f"{self.title_ru} ({self.issue})"
