@@ -491,62 +491,152 @@ def instructions_data(request):
                     "description_kg": "Академиялык эс алууну рөмеддөө боюнча кадам-кадам жетекчилик",
                     "description_en": "Step-by-step guide for academic leave registration",
                     "icon": "CalendarDaysIcon",
-                    "estimated_time": "2-3 дня",
-                    "max_duration": "30 дней",
-                    "contact_info": "Деканат: +996 312 123-456 доб. 105",
-                    "requirements": [
+                    "estimated_time_ru": "2-3 дня",
+                    "estimated_time_kg": "2-3 күн",
+                    "estimated_time_en": "2-3 days",
+                    "max_duration_ru": "30 дней",
+                    "max_duration_kg": "30 күн",
+                    "max_duration_en": "30 days",
+                    "contact_info_ru": "Деканат: +996 312 123-456 доб. 105",
+                    "contact_info_kg": "Деканат: +996 312 123-456 кош. 105",
+                    "contact_info_en": "Dean's Office: +996 312 123-456 ext. 105",
+                    "requirements_ru": [
                         "Заявление на имя ректора",
                         "Справка о состоянии здоровья (при необходимости)",
                         "Документы, подтверждающие причину отпуска",
                         "Справка об отсутствии задолженностей"
                     ],
+                    "requirements_kg": [
+                        "Ректордун атына арыз",
+                        "Ден соолук абалы жөнүндө справка (зарылчылыгына жараша)",
+                        "Эс алуунун себебин далилдөөчү документтер",
+                        "Карыз жок экендиги жөнүндө справка"
+                    ],
+                    "requirements_en": [
+                        "Application addressed to the rector",
+                        "Health certificate (if necessary)",
+                        "Documents confirming the reason for leave",
+                        "Certificate of no debts"
+                    ],
                     "steps": [
                         {
                             "step_number": 1,
-                            "title": "Подготовка документов",
-                            "description": "Соберите все необходимые документы для подачи заявления",
-                            "timeframe": "1-2 дня",
-                            "details": [
+                            "title_ru": "Подготовка документов",
+                            "title_kg": "Документтерди даярдоо",
+                            "title_en": "Document Preparation",
+                            "description_ru": "Соберите все необходимые документы для подачи заявления",
+                            "description_kg": "Арыз берүү үчүн бардык керектүү документтерди чогултуңуз",
+                            "description_en": "Collect all necessary documents for application submission",
+                            "timeframe_ru": "1-2 дня",
+                            "timeframe_kg": "1-2 күн",
+                            "timeframe_en": "1-2 days",
+                            "details_ru": [
                                 "Напишите заявление на имя ректора с указанием причины и сроков",
                                 "Получите справку от врача (если отпуск по состоянию здоровья)",
                                 "Соберите подтверждающие документы (справки, свидетельства)",
                                 "Получите справку об отсутствии академических задолженностей"
+                            ],
+                            "details_kg": [
+                                "Ректордун атына себеби жана мөөнөтү көрсөтүлгөн арыз жазыңыз",
+                                "Врачтан справка алыңыз (эгер ден соолук абалына байланыштуу болсо)",
+                                "Далилдөөчү документтерди чогултуңуз (справкалар, күбөлүктөр)",
+                                "Академиялык карыз жок экендиги жөнүндө справка алыңыз"
+                            ],
+                            "details_en": [
+                                "Write an application to the rector indicating the reason and timeframe",
+                                "Get a medical certificate (if leave is for health reasons)",
+                                "Collect supporting documents (certificates, testimonials)",
+                                "Get a certificate of no academic debts"
                             ]
                         },
                         {
                             "step_number": 2,
-                            "title": "Подача документов",
-                            "description": "Подайте документы в деканат своего факультета",
-                            "timeframe": "30 минут",
-                            "details": [
+                            "title_ru": "Подача документов",
+                            "title_kg": "Документтерди берүү",
+                            "title_en": "Document Submission",
+                            "description_ru": "Подайте документы в деканат своего факультета",
+                            "description_kg": "Документтерди өз факультетиңиздин деканатына бериңиз",
+                            "description_en": "Submit documents to your faculty's dean's office",
+                            "timeframe_ru": "30 минут",
+                            "timeframe_kg": "30 мүнөт",
+                            "timeframe_en": "30 minutes",
+                            "details_ru": [
                                 "Обратитесь в деканат в рабочие часы",
                                 "Передайте все документы секретарю деканата",
                                 "Получите расписку о приеме документов",
                                 "Уточните сроки рассмотрения заявления"
+                            ],
+                            "details_kg": [
+                                "Иш убагында деканатка кайрылыңыз",
+                                "Бардык документтерди деканаттын катчысына өткөрүңүз",
+                                "Документтерди кабыл алгандыгы жөнүндө расписка алыңыз",
+                                "Арызды карап чыгуу мөөнөттөрүн так билиңиз"
+                            ],
+                            "details_en": [
+                                "Contact the dean's office during working hours",
+                                "Submit all documents to the dean's secretary",
+                                "Get a receipt for document acceptance",
+                                "Clarify the application review timeframe"
                             ]
                         },
                         {
                             "step_number": 3,
-                            "title": "Рассмотрение заявления",
-                            "description": "Ожидание решения администрации университета",
-                            "timeframe": "5-7 дней",
-                            "details": [
+                            "title_ru": "Рассмотрение заявления",
+                            "title_kg": "Арызды карап чыгуу",
+                            "title_en": "Application Review",
+                            "description_ru": "Ожидание решения администрации университета",
+                            "description_kg": "Университеттин администрациясынын чечимин күтүү",
+                            "description_en": "Waiting for university administration decision",
+                            "timeframe_ru": "5-7 дней",
+                            "timeframe_kg": "5-7 күн",
+                            "timeframe_en": "5-7 days",
+                            "details_ru": [
                                 "Заявление рассматривается деканом факультета",
                                 "При необходимости может потребоваться дополнительная документация",
                                 "Решение утверждается ректором университета",
                                 "Вам сообщат о принятом решении"
+                            ],
+                            "details_kg": [
+                                "Арызды факультеттин деканы карайт",
+                                "Зарылчылыгына жараша кошумча документация талап кылынышы мүмкүн",
+                                "Чечимди университеттин ректору бекитет",
+                                "Силерге кабыл алынган чечим жөнүндө кабарлайт"
+                            ],
+                            "details_en": [
+                                "Application is reviewed by the faculty dean",
+                                "Additional documentation may be required if necessary",
+                                "Decision is approved by the university rector",
+                                "You will be notified of the decision made"
                             ]
                         },
                         {
                             "step_number": 4,
-                            "title": "Получение приказа",
-                            "description": "Получение официального приказа об академическом отпуске",
-                            "timeframe": "1 день",
-                            "details": [
+                            "title_ru": "Получение приказа",
+                            "title_kg": "Буйруктуу алуу",
+                            "title_en": "Receiving the Order",
+                            "description_ru": "Получение официального приказа об академическом отпуске",
+                            "description_kg": "Академиялык эс алуу жөнүндө расмий буйруктуу алуу",
+                            "description_en": "Receiving official order for academic leave",
+                            "timeframe_ru": "1 день",
+                            "timeframe_kg": "1 күн",
+                            "timeframe_en": "1 day",
+                            "details_ru": [
                                 "Явитесь в деканат в указанное время",
                                 "Получите копию приказа об академическом отпуске",
                                 "Ознакомьтесь с условиями и сроками отпуска",
                                 "Сохраните документ для дальнейшего восстановления"
+                            ],
+                            "details_kg": [
+                                "Көрсөтүлгөн убакытта деканатка келиңиз",
+                                "Академиялык эс алуу жөнүндө буйруктун көчүрмөсүн алыңыз",
+                                "Эс алуунун шарттары жана мөөнөттөрү менен таанышыңыз",
+                                "Кийинки калыбына келтирүү үчүн документти сактаңыз"
+                            ],
+                            "details_en": [
+                                "Come to the dean's office at the specified time",
+                                "Get a copy of the academic leave order",
+                                "Familiarize yourself with leave conditions and terms",
+                                "Keep the document for future restoration"
                             ]
                         }
                     ]
@@ -560,62 +650,152 @@ def instructions_data(request):
                     "description_kg": "Башка билим берүү программасына которуу боюнча жетекчилик",
                     "description_en": "Guide for transferring to another educational program",
                     "icon": "UserGroupIcon",
-                    "estimated_time": "1-2 недели",
-                    "max_duration": "До начала семестра",
-                    "contact_info": "Учебная часть: +996 312 123-456 доб. 102",
-                    "requirements": [
+                    "estimated_time_ru": "1-2 недели",
+                    "estimated_time_kg": "1-2 жума",
+                    "estimated_time_en": "1-2 weeks",
+                    "max_duration_ru": "До начала семестра",
+                    "max_duration_kg": "Семестр башталганга чейин",
+                    "max_duration_en": "Before the semester starts",
+                    "contact_info_ru": "Учебная часть: +996 312 123-456 доб. 102",
+                    "contact_info_kg": "Окуу бөлүмү: +996 312 123-456 кош. 102",
+                    "contact_info_en": "Academic Office: +996 312 123-456 ext. 102",
+                    "requirements_ru": [
                         "Заявление о переводе",
                         "Академическая справка",
                         "Выписка из зачетной книжки",
                         "Согласие принимающей кафедры"
                     ],
+                    "requirements_kg": [
+                        "Которуу жөнүндө арыз",
+                        "Академиялык справка",
+                        "Белгилер китебинен көчүрмө",
+                        "Кабыл алуучу кафедранын макулдугу"
+                    ],
+                    "requirements_en": [
+                        "Transfer application",
+                        "Academic transcript",
+                        "Excerpt from grade book",
+                        "Consent from receiving department"
+                    ],
                     "steps": [
                         {
                             "step_number": 1,
-                            "title": "Консультация с кафедрой",
-                            "description": "Получите консультацию о возможности перевода",
-                            "timeframe": "1-2 дня",
-                            "details": [
+                            "title_ru": "Консультация с кафедрой",
+                            "title_kg": "Кафедра менен консультация",
+                            "title_en": "Department Consultation",
+                            "description_ru": "Получите консультацию о возможности перевода",
+                            "description_kg": "Которуу мүмкүнчүлүгү жөнүндө консультация алыңыз",
+                            "description_en": "Get consultation about transfer possibility",
+                            "timeframe_ru": "1-2 дня",
+                            "timeframe_kg": "1-2 күн",
+                            "timeframe_en": "1-2 days",
+                            "details_ru": [
                                 "Обратитесь на кафедру желаемой специальности",
                                 "Уточните наличие свободных мест",
                                 "Получите информацию о разнице в учебных планах",
                                 "Узнайте о дополнительных требованиях"
+                            ],
+                            "details_kg": [
+                                "Каалаган адистиктин кафедрасына кайрылыңыз",
+                                "Бош орундардын барын так билиңиз",
+                                "Окуу пландарынын айырмасы жөнүндө маалымат алыңыз",
+                                "Кошумча талаптар жөнүндө билиңиз"
+                            ],
+                            "details_en": [
+                                "Contact the department of desired specialty",
+                                "Check availability of vacant places",
+                                "Get information about curriculum differences",
+                                "Learn about additional requirements"
                             ]
                         },
                         {
                             "step_number": 2,
-                            "title": "Подготовка документов",
-                            "description": "Соберите все необходимые документы",
-                            "timeframe": "2-3 дня",
-                            "details": [
+                            "title_ru": "Подготовка документов",
+                            "title_kg": "Документтерди даярдоо",
+                            "title_en": "Document Preparation",
+                            "description_ru": "Соберите все необходимые документы",
+                            "description_kg": "Бардык керектүү документтерди чогултуңуз",
+                            "description_en": "Collect all necessary documents",
+                            "timeframe_ru": "2-3 дня",
+                            "timeframe_kg": "2-3 күн",
+                            "timeframe_en": "2-3 days",
+                            "details_ru": [
                                 "Напишите заявление о переводе",
                                 "Получите академическую справку в деканате",
                                 "Сделайте выписку из зачетной книжки",
                                 "Получите согласие от принимающей кафедры"
+                            ],
+                            "details_kg": [
+                                "Которуу жөнүндө арыз жазыңыз",
+                                "Деканаттан академиялык справка алыңыз",
+                                "Белгилер китебинен көчүрмө жасаңыз",
+                                "Кабыл алуучу кафедрадан макулдук алыңыз"
+                            ],
+                            "details_en": [
+                                "Write a transfer application",
+                                "Get academic transcript from dean's office",
+                                "Make excerpt from grade book",
+                                "Get consent from receiving department"
                             ]
                         },
                         {
                             "step_number": 3,
-                            "title": "Сдача академической разности",
-                            "description": "Ликвидация академической задолженности",
-                            "timeframe": "1-4 недели",
-                            "details": [
+                            "title_ru": "Сдача академической разности",
+                            "title_kg": "Академиялык айырманы тапшыруу",
+                            "title_en": "Academic Difference Examination",
+                            "description_ru": "Ликвидация академической задолженности",
+                            "description_kg": "Академиялык карызды жоюу",
+                            "description_en": "Academic debt elimination",
+                            "timeframe_ru": "1-4 недели",
+                            "timeframe_kg": "1-4 жума",
+                            "timeframe_en": "1-4 weeks",
+                            "details_ru": [
                                 "Сравните учебные планы специальностей",
                                 "Определите перечень дополнительных дисциплин",
                                 "Сдайте экзамены/зачеты по недостающим предметам",
                                 "Получите справку о ликвидации разности"
+                            ],
+                            "details_kg": [
+                                "Адистиктердин окуу пландарын салыштырыңыз",
+                                "Кошумча дисциплиналардын тизмесин аныктаңыз",
+                                "Жетишпеген сабактар боюнча экзамен/зачет тапшырыңыз",
+                                "Айырманы жок кылуу жөнүндө справка алыңыз"
+                            ],
+                            "details_en": [
+                                "Compare specialty curricula",
+                                "Determine list of additional disciplines",
+                                "Pass exams/credits for missing subjects",
+                                "Get certificate of difference elimination"
                             ]
                         },
                         {
                             "step_number": 4,
-                            "title": "Оформление перевода",
-                            "description": "Официальное оформление перевода",
-                            "timeframe": "3-5 дней",
-                            "details": [
+                            "title_ru": "Оформление перевода",
+                            "title_kg": "Которууну рөмеддөө",
+                            "title_en": "Transfer Formalization",
+                            "description_ru": "Официальное оформление перевода",
+                            "description_kg": "Которуунун расмий рөмеддөлүшү",
+                            "description_en": "Official transfer formalization",
+                            "timeframe_ru": "3-5 дней",
+                            "timeframe_kg": "3-5 күн",
+                            "timeframe_en": "3-5 days",
+                            "details_ru": [
                                 "Подайте все документы в учебную часть",
                                 "Дождитесь издания приказа о переводе",
                                 "Получите новую зачетную книжку",
                                 "Ознакомьтесь с новым расписанием"
+                            ],
+                            "details_kg": [
+                                "Бардык документтерди окуу бөлүмүнө бериңиз",
+                                "Которуу жөнүндө буйруктун чыгарылышын күтүңүз",
+                                "Жаңы белгилер китебин алыңыз",
+                                "Жаңы сабак расписаниясы менен таанышыңыз"
+                            ],
+                            "details_en": [
+                                "Submit all documents to academic office",
+                                "Wait for transfer order issuance",
+                                "Get new grade book",
+                                "Familiarize with new schedule"
                             ]
                         }
                     ]
@@ -629,62 +809,152 @@ def instructions_data(request):
                     "description_kg": "Чыгарылгандан кийин университетке калыбына келтирүү процедурасы",
                     "description_en": "Procedure for restoration at university after expulsion",
                     "icon": "ClipboardDocumentListIcon",
-                    "estimated_time": "2-3 недели",
-                    "max_duration": "До начала семестра",
-                    "contact_info": "Приемная комиссия: +996 312 123-456 доб. 101",
-                    "requirements": [
+                    "estimated_time_ru": "2-3 недели",
+                    "estimated_time_kg": "2-3 жума",
+                    "estimated_time_en": "2-3 weeks",
+                    "max_duration_ru": "До начала семестра",
+                    "max_duration_kg": "Семестр башталганга чейин",
+                    "max_duration_en": "Before the semester starts",
+                    "contact_info_ru": "Приемная комиссия: +996 312 123-456 доб. 101",
+                    "contact_info_kg": "Кабыл алуу комиссиясы: +996 312 123-456 кош. 101",
+                    "contact_info_en": "Admissions Committee: +996 312 123-456 ext. 101",
+                    "requirements_ru": [
                         "Заявление о восстановлении",
                         "Копия приказа об отчислении",
                         "Академическая справка",
                         "Документ об образовании"
                     ],
+                    "requirements_kg": [
+                        "Калыбына келтирүү жөнүндө арыз",
+                        "Чыгаруу жөнүндө буйруктун көчүрмөсү",
+                        "Академиялык справка",
+                        "Билим жөнүндө документ"
+                    ],
+                    "requirements_en": [
+                        "Restoration application",
+                        "Copy of expulsion order",
+                        "Academic transcript",
+                        "Education document"
+                    ],
                     "steps": [
                         {
                             "step_number": 1,
-                            "title": "Подача заявления",
-                            "description": "Подача документов для восстановления",
-                            "timeframe": "1 день",
-                            "details": [
+                            "title_ru": "Подача заявления",
+                            "title_kg": "Арыз берүү",
+                            "title_en": "Application Submission",
+                            "description_ru": "Подача документов для восстановления",
+                            "description_kg": "Калыбына келтирүү үчүн документтерди берүү",
+                            "description_en": "Document submission for restoration",
+                            "timeframe_ru": "1 день",
+                            "timeframe_kg": "1 күн",
+                            "timeframe_en": "1 day",
+                            "details_ru": [
                                 "Напишите заявление на имя ректора",
                                 "Приложите копию приказа об отчислении",
                                 "Предоставьте академическую справку",
                                 "Приложите документ об образовании"
+                            ],
+                            "details_kg": [
+                                "Ректордун атына арыз жазыңыз",
+                                "Чыгаруу жөнүндө буйруктун көчүрмөсүн тиркеңиз",
+                                "Академиялык справканы бериңиз",
+                                "Билим жөнүндө документти тиркеңиз"
+                            ],
+                            "details_en": [
+                                "Write an application addressed to the rector",
+                                "Attach a copy of the expulsion order",
+                                "Provide academic transcript",
+                                "Attach education document"
                             ]
                         },
                         {
                             "step_number": 2,
-                            "title": "Рассмотрение заявления",
-                            "description": "Проверка документов и принятие решения",
-                            "timeframe": "7-10 дней",
-                            "details": [
+                            "title_ru": "Рассмотрение заявления",
+                            "title_kg": "Арызды карап чыгуу",
+                            "title_en": "Application Review",
+                            "description_ru": "Проверка документов и принятие решения",
+                            "description_kg": "Документтерди текшерүү жана чечим чыгаруу",
+                            "description_en": "Document verification and decision making",
+                            "timeframe_ru": "7-10 дней",
+                            "timeframe_kg": "7-10 күн",
+                            "timeframe_en": "7-10 days",
+                            "details_ru": [
                                 "Документы проверяются приемной комиссией",
                                 "Анализируется академическая успеваемость",
                                 "Учитывается причина отчисления",
                                 "Принимается решение о возможности восстановления"
+                            ],
+                            "details_kg": [
+                                "Документтерди кабыл алуу комиссиясы текшерет",
+                                "Академиялык жетишкендик талданат",
+                                "Чыгаруунун себеби эсепке алынат",
+                                "Калыбына келтирүү мүмкүнчүлүгү жөнүндө чечим чыгарылат"
+                            ],
+                            "details_en": [
+                                "Documents are reviewed by admissions committee",
+                                "Academic performance is analyzed",
+                                "Expulsion reason is considered",
+                                "Decision about restoration possibility is made"
                             ]
                         },
                         {
                             "step_number": 3,
-                            "title": "Ликвидация задолженностей",
-                            "description": "Сдача академических задолженностей",
-                            "timeframe": "1-2 недели",
-                            "details": [
+                            "title_ru": "Ликвидация задолженностей",
+                            "title_kg": "Карыздарды жоюу",
+                            "title_en": "Debt Elimination",
+                            "description_ru": "Сдача академических задолженностей",
+                            "description_kg": "Академиялык карыздарды тапшыруу",
+                            "description_en": "Academic debt settlement",
+                            "timeframe_ru": "1-2 недели",
+                            "timeframe_kg": "1-2 жума",
+                            "timeframe_en": "1-2 weeks",
+                            "details_ru": [
                                 "Получите список задолженностей",
                                 "Согласуйте график сдачи с преподавателями",
                                 "Сдайте все академические задолженности",
                                 "Получите справку о ликвидации задолженностей"
+                            ],
+                            "details_kg": [
+                                "Карыздардын тизмесин алыңыз",
+                                "Мугалимдер менен тапшыруу графигин келишиңиз",
+                                "Бардык академиялык карыздарды тапшырыңыз",
+                                "Карыздарды жок кылуу жөнүндө справка алыңыз"
+                            ],
+                            "details_en": [
+                                "Get list of debts",
+                                "Coordinate submission schedule with teachers",
+                                "Submit all academic debts",
+                                "Get certificate of debt elimination"
                             ]
                         },
                         {
                             "step_number": 4,
-                            "title": "Зачисление",
-                            "description": "Официальное восстановление в университете",
-                            "timeframe": "2-3 дня",
-                            "details": [
+                            "title_ru": "Зачисление",
+                            "title_kg": "Кабыл алуу",
+                            "title_en": "Enrollment",
+                            "description_ru": "Официальное восстановление в университете",
+                            "description_kg": "Университетке расмий калыбына келтирүү",
+                            "description_en": "Official restoration at university",
+                            "timeframe_ru": "2-3 дня",
+                            "timeframe_kg": "2-3 күн",
+                            "timeframe_en": "2-3 days",
+                            "details_ru": [
                                 "Издается приказ о восстановлении",
                                 "Выдается новая зачетная книжка",
                                 "Оформляется студенческий билет",
                                 "Вы зачисляетесь в соответствующую группу"
+                            ],
+                            "details_kg": [
+                                "Калыбына келтирүү жөнүндө буйрук чыгарылат",
+                                "Жаңы белгилер китеби берилет",
+                                "Студенттик билет рөмеддөлөт",
+                                "Сиз тиешелүү топко кабыл алынасыз"
+                            ],
+                            "details_en": [
+                                "Restoration order is issued",
+                                "New grade book is issued",
+                                "Student card is processed",
+                                "You are enrolled in appropriate group"
                             ]
                         }
                     ]
@@ -698,64 +968,158 @@ def instructions_data(request):
                     "description_kg": "Ар кандай маалымат каттарын жана документтерди алуу тартиби",
                     "description_en": "Procedure for obtaining various certificates and documents",
                     "icon": "DocumentTextIcon",
-                    "estimated_time": "1-3 дня",
-                    "max_duration": "Зависит от типа документа",
-                    "contact_info": "Канцелярия: +996 312 123-456 доб. 103",
-                    "requirements": [
+                    "estimated_time_ru": "1-3 дня",
+                    "estimated_time_kg": "1-3 күн",
+                    "estimated_time_en": "1-3 days",
+                    "max_duration_ru": "Зависит от типа документа",
+                    "max_duration_kg": "Документтин түрүнө жараша",
+                    "max_duration_en": "Depends on document type",
+                    "contact_info_ru": "Канцелярия: +996 312 123-456 доб. 103",
+                    "contact_info_kg": "Канцелярия: +996 312 123-456 кош. 103",
+                    "contact_info_en": "Secretariat: +996 312 123-456 ext. 103",
+                    "requirements_ru": [
                         "Заявление с указанием типа справки",
                         "Студенческий билет",
                         "Документ, удостоверяющий личность",
                         "Оплата государственной пошлины (при необходимости)"
                     ],
+                    "requirements_kg": [
+                        "Маалымат каттын түрүн көрсөткөн арыз",
+                        "Студенттик билет",
+                        "Жеке инсанды тастыктоочу документ",
+                        "Мамлекеттик баж төлөө (зарылчылыгына жараша)"
+                    ],
+                    "requirements_en": [
+                        "Application indicating certificate type",
+                        "Student card",
+                        "Identity document",
+                        "State fee payment (if required)"
+                    ],
                     "steps": [
                         {
                             "step_number": 1,
-                            "title": "Определение типа документа",
-                            "description": "Выберите нужный тип справки или документа",
-                            "timeframe": "15 минут",
-                            "details": [
+                            "title_ru": "Определение типа документа",
+                            "title_kg": "Документтин түрүн аныктоо",
+                            "title_en": "Document Type Determination",
+                            "description_ru": "Выберите нужный тип справки или документа",
+                            "description_kg": "Керектүү маалымат каттын же документтин түрүн тандаңыз",
+                            "description_en": "Choose the required certificate or document type",
+                            "timeframe_ru": "15 минут",
+                            "timeframe_kg": "15 мүнөт",
+                            "timeframe_en": "15 minutes",
+                            "details_ru": [
                                 "Справка об обучении",
                                 "Справка о периоде обучения",
                                 "Академическая справка",
                                 "Справка для военкомата",
                                 "Справка для получения стипендии",
                                 "Дубликат студенческого билета"
+                            ],
+                            "details_kg": [
+                                "Окуу жөнүндө маалымат кат",
+                                "Окуу мезгили жөнүндө маалымат кат",
+                                "Академиялык маалымат кат",
+                                "Аскердик комиссариат үчүн маалымат кат",
+                                "Стипендия алуу үчүн маалымат кат",
+                                "Студенттик билеттин дубликаты"
+                            ],
+                            "details_en": [
+                                "Study certificate",
+                                "Study period certificate",
+                                "Academic transcript",
+                                "Certificate for military commissariat",
+                                "Certificate for scholarship",
+                                "Student card duplicate"
                             ]
                         },
                         {
                             "step_number": 2,
-                            "title": "Подача заявления",
-                            "description": "Оформление заявления на получение документа",
-                            "timeframe": "30 минут",
-                            "details": [
+                            "title_ru": "Подача заявления",
+                            "title_kg": "Арыз берүү",
+                            "title_en": "Application Submission",
+                            "description_ru": "Оформление заявления на получение документа",
+                            "description_kg": "Документ алуу үчүн арыз рөмеддөө",
+                            "description_en": "Application processing for document receipt",
+                            "timeframe_ru": "30 минут",
+                            "timeframe_kg": "30 мүнөт",
+                            "timeframe_en": "30 minutes",
+                            "details_ru": [
                                 "Заполните заявление с указанием типа справки",
                                 "Укажите цель получения документа",
                                 "Предъявите студенческий билет",
                                 "При необходимости оплатите госпошлину"
+                            ],
+                            "details_kg": [
+                                "Маалымат каттын түрүн көрсөтүп арызды толтуруңуз",
+                                "Документти алуу максатын көрсөтүңүз",
+                                "Студенттик билетти көрсөтүңүз",
+                                "Зарылчылыгына жараша мамлекеттик бажды төлөңүз"
+                            ],
+                            "details_en": [
+                                "Fill out application indicating certificate type",
+                                "Specify purpose of document receipt",
+                                "Present student card",
+                                "Pay state fee if necessary"
                             ]
                         },
                         {
                             "step_number": 3,
-                            "title": "Ожидание готовности",
-                            "description": "Время обработки заявления",
-                            "timeframe": "1-3 дня",
-                            "details": [
+                            "title_ru": "Ожидание готовности",
+                            "title_kg": "Даярдыкты күтүү",
+                            "title_en": "Waiting for Readiness",
+                            "description_ru": "Время обработки заявления",
+                            "description_kg": "Арызды иштеп чыгуу убактысы",
+                            "description_en": "Application processing time",
+                            "timeframe_ru": "1-3 дня",
+                            "timeframe_kg": "1-3 күн",
+                            "timeframe_en": "1-3 days",
+                            "details_ru": [
                                 "Стандартные справки готовятся в течение 1-2 дней",
                                 "Академические справки - до 3 дней",
                                 "Дубликаты документов - до 5 дней",
                                 "Вам сообщат о готовности по телефону"
+                            ],
+                            "details_kg": [
+                                "Стандарттык маалымат каттар 1-2 күндүн ичинде даярдалат",
+                                "Академиялык маалымат каттар - 3 күнгө чейин",
+                                "Документтердин дубликаттары - 5 күнгө чейин",
+                                "Даярдыгы жөнүндө телефон аркылуу кабарлайт"
+                            ],
+                            "details_en": [
+                                "Standard certificates are prepared within 1-2 days",
+                                "Academic transcripts - up to 3 days",
+                                "Document duplicates - up to 5 days",
+                                "You will be notified of readiness by phone"
                             ]
                         },
                         {
                             "step_number": 4,
-                            "title": "Получение документа",
-                            "description": "Получение готовой справки или документа",
-                            "timeframe": "15 минут",
-                            "details": [
+                            "title_ru": "Получение документа",
+                            "title_kg": "Документти алуу",
+                            "title_en": "Document Receipt",
+                            "description_ru": "Получение готовой справки или документа",
+                            "description_kg": "Даяр маалымат катты же документти алуу",
+                            "description_en": "Receiving ready certificate or document",
+                            "timeframe_ru": "15 минут",
+                            "timeframe_kg": "15 мүнөт",
+                            "timeframe_en": "15 minutes",
+                            "details_ru": [
                                 "Явитесь в указанное время",
                                 "Предъявите документ, удостоверяющий личность",
                                 "Получите справку с печатью и подписью",
                                 "Проверьте правильность данных в документе"
+                            ],
+                            "details_kg": [
+                                "Көрсөтүлгөн убакытта келиңиз",
+                                "Жеке инсанды тастыктоочу документти көрсөтүңүз",
+                                "Мөөр жана кол коюлган маалымат катты алыңыз",
+                                "Документтеги маалыматтардын туурасын текшериңиз"
+                            ],
+                            "details_en": [
+                                "Come at the specified time",
+                                "Present identity document",
+                                "Receive certificate with stamp and signature",
+                                "Check correctness of data in document"
                             ]
                         }
                     ]
