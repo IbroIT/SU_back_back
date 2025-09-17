@@ -208,4 +208,7 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@salymbekov.edu.kg')
+
+# Email addresses for different purposes
 ADMISSIONS_EMAIL_TO = os.environ.get('ADMISSIONS_EMAIL_TO', 'adilhansatymkulov40@gmail.com')
+STUDENT_APPEALS_EMAIL_TO = os.environ.get('STUDENT_APPEALS_EMAIL_TO', 'adilhansatymkulov40@gmail.com')
