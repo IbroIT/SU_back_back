@@ -18,7 +18,7 @@ class FacultyViewSet(viewsets.ReadOnlyModelViewSet):
     
     def get_serializer_class(self):
         if self.action == 'list':
-            return FacultyListSerializer
+            return FacultySerializer
         return FacultySerializer
     
     def get_queryset(self):
@@ -57,7 +57,7 @@ class FacultyViewSet(viewsets.ReadOnlyModelViewSet):
                 position=position_code
             ).order_by('order', 'last_name')
             
-            serializer = FacultyListSerializer(faculty, many=True)
+            serializer = FacultySerializer(faculty, many=True)
             result[position_code] = {
                 'name': position_name,
                 'faculty': serializer.data
