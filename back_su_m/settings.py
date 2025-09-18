@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'infrastructure',
     'documents',  # Добавляем новое приложение
     'student_life',  # Приложение студенческой жизни
+    'media_coverage',  # Приложение медиа-покрытия
 ]
 
 MIDDLEWARE = [
