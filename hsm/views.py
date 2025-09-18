@@ -5,6 +5,7 @@ from django.db.models import Q
 from .models import  Faculty, Accreditation
 from .serializers import (
     FacultySerializer, 
+    FacultyListSerializer,
     AccreditationSerializer, 
 )
 

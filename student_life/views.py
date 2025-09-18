@@ -1168,11 +1168,14 @@ Email: {appeal.email}
 Дата создания: {appeal.created_at}
             """
             
+            # Support multiple email addresses (separated by commas)
+            recipients = [email.strip() for email in settings.STUDENT_APPEALS_EMAIL_TO.split(',')]
+            
             send_mail(
                 subject=subject,
                 message=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[settings.ADMISSIONS_EMAIL_TO],
+                recipient_list=recipients,
                 fail_silently=False,
             )
         except Exception as e:
