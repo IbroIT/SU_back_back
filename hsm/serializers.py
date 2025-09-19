@@ -15,7 +15,10 @@ class FacultyListSerializer(serializers.ModelSerializer):
             'first_name_kg', 'last_name_kg', 'middle_name_kg',
             'first_name_en', 'last_name_en', 'middle_name_en',
             'position', 'position_display', 'position_custom',
-            'academic_degree', 'academic_degree_display', 'academic_title',
+            'position_kg', 'position_en',
+            'academic_degree', 'academic_degree_display', 
+            'academic_degree_kg', 'academic_degree_en',
+            'academic_title', 'academic_title_kg', 'academic_title_en',
             'photo', 'full_name', 'order'
         ]
 

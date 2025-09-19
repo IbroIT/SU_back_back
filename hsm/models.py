@@ -37,9 +37,15 @@ class Faculty(models.Model):
     
     position = models.CharField(max_length=50, choices=POSITIONS, verbose_name="Должность")
     position_custom = models.CharField(max_length=200, verbose_name="Дополнительная должность", blank=True)
+    position_kg = models.CharField(max_length=200, verbose_name="Должность (KG)", blank=True)
+    position_en = models.CharField(max_length=200, verbose_name="Должность (EN)", blank=True)
     
     academic_degree = models.CharField(max_length=20, choices=ACADEMIC_DEGREES, verbose_name="Ученая степень", blank=True)
+    academic_degree_kg = models.CharField(max_length=200, verbose_name="Ученая степень (KG)", blank=True)
+    academic_degree_en = models.CharField(max_length=200, verbose_name="Ученая степень (EN)", blank=True)
     academic_title = models.CharField(max_length=200, verbose_name="Ученое звание", blank=True)
+    academic_title_kg = models.CharField(max_length=200, verbose_name="Ученое звание (KG)", blank=True)
+    academic_title_en = models.CharField(max_length=200, verbose_name="Ученое звание (EN)", blank=True)
     
     photo = models.ImageField(upload_to='faculty/photos/', verbose_name="Фото", blank=True)
     
@@ -103,6 +109,8 @@ class Accreditation(models.Model):
     organization_en = models.CharField(max_length=200, verbose_name="Аккредитующая организация (EN)", blank=True)
     
     accreditation_type = models.CharField(max_length=20, choices=ACCREDITATION_TYPES, verbose_name="Тип аккредитации")
+    accreditation_type_kg = models.CharField(max_length=100, verbose_name="Тип аккредитации (KG)", blank=True)
+    accreditation_type_en = models.CharField(max_length=100, verbose_name="Тип аккредитации (EN)", blank=True)
     
     description = models.TextField(verbose_name="Описание", blank=True)
     description_kg = models.TextField(verbose_name="Описание (KG)", blank=True)
