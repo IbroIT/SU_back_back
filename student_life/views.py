@@ -27,37 +27,45 @@ def internships_data(request):
         organizations = PartnerOrganization.objects.filter(is_active=True)
         organizations_data = PartnerOrganizationSerializer(organizations, many=True).data
         
+        # Добавляем совместимость с фронтендом для specializations
+        for org in organizations_data:
+            org['name'] = org['name_ru']  # Добавляем name для совместимости
+            org['description'] = org['description_ru']  # Добавляем description для совместимости
+            
+            # Обрабатываем specializations
+            if 'specializations' in org:
+                for spec in org['specializations']:
+                    spec['name'] = spec['name_ru']  # Добавляем name для совместимости
+        
         # Создаем структуру требований (пока заглушка)
         requirements = {
-            'academic': {
-                'title_ru': 'Академические требования',
-                'title_kg': 'Академиялык талаптар',
-                'title_en': 'Academic Requirements',
-                'items': [
-                    {'text_ru': 'Средний балл не ниже 3.0', 'text_kg': 'Орточо баа 3.0дон төмөн эмес', 'text_en': 'GPA not lower than 3.0'},
-                    {'text_ru': 'Прохождение базовых курсов', 'text_kg': 'Негизги курстарды өтүү', 'text_en': 'Completion of basic courses'}
-                ]
-            },
-            'documents': {
-                'title_ru': 'Необходимые документы',
-                'title_kg': 'Керектүү документтер',
-                'title_en': 'Required Documents',
-                'items': [
-                    {'text_ru': 'Справка об обучении', 'text_kg': 'Окуу жөнүндө маалымат', 'text_en': 'Certificate of study'},
-                    {'text_ru': 'Медицинская справка', 'text_kg': 'Медициналык справка', 'text_en': 'Medical certificate'}
-                ]
-            }
+            'academic': [
+                {
+                    'title': 'Академические требования',
+                    'items': [
+                        {'text': 'Средний балл не ниже 3.0'},
+                        {'text': 'Прохождение базовых курсов'}
+                    ]
+                }
+            ],
+            'documents': [
+                {
+                    'title': 'Необходимые документы',
+                    'items': [
+                        {'text': 'Справка об обучении'},
+                        {'text': 'Медицинская справка'}
+                    ]
+                }
+            ]
         }
         
         # Создаем шаблоны отчетов (пока заглушка)
         report_templates = [
             {
-                'name_ru': 'Шаблон отчета по практике',
-                'name_kg': 'Практика боюнча отчет үлгүсү',
-                'name_en': 'Internship Report Template',
-                'description_ru': 'Стандартный шаблон для отчета',
-                'description_kg': 'Отчет үчүн стандарттык үлгү',
-                'description_en': 'Standard template for report',
+                'title': 'Шаблон отчета по практике',
+                'description': 'Стандартный шаблон для отчета',
+                'format': 'DOCX',
+                'file_size': '450 KB',
                 'file': '/media/templates/internship_report.docx'
             }
         ]
@@ -1168,11 +1176,14 @@ Email: {appeal.email}
 Дата создания: {appeal.created_at}
             """
             
+            # Support multiple email addresses (separated by commas)
+            recipients = [email.strip() for email in settings.STUDENT_APPEALS_EMAIL_TO.split(',')]
+            
             send_mail(
                 subject=subject,
                 message=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[settings.ADMISSIONS_EMAIL_TO],
+                recipient_list=recipients,
                 fail_silently=False,
             )
         except Exception as e:

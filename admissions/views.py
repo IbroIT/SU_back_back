@@ -106,14 +106,15 @@ Email: {g('email')}
         if errors:
             return JsonResponse({'status': 'error', 'errors': errors}, status=400)
 
-        # Target recipient from env or default
-        recipient = getattr(settings, 'ADMISSIONS_EMAIL_TO', None) or 'adilhansatymkulov40@gmail.com'
+        # Target recipients from env or default (support multiple addresses)
+        recipient_setting = getattr(settings, 'ADMISSIONS_EMAIL_TO', None) or 'adilhansatymkulov40@gmail.com'
+        recipients = [email.strip() for email in recipient_setting.split(',')]
 
         email = EmailMessage(
             subject=subject,
             body=body,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None) or recipient,
-            to=[recipient],
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None) or recipients[0],
+            to=recipients,
             reply_to=[g('email')] if g('email') else None,
         )
 
