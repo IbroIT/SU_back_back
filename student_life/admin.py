@@ -8,7 +8,7 @@ from .models import (
     AcademicRegulation, AcademicRegulationSection, AcademicRegulationRule,
     DownloadableDocument,
     StudentGuide, GuideRequirement, GuideStep, GuideStepDetail,
-    StudentAppeal
+    StudentAppeal, PhotoAlbum, Photo, VideoContent, StudentLifeStatistic
 )
 
 
@@ -380,6 +380,122 @@ class StudentAppealAdmin(admin.ModelAdmin):
         }),
         ('Системная информация', {
             'fields': ('created_at', 'updated_at'),
+            'classes': ['collapse']
+        }),
+    )
+
+
+# =============================================================================
+# ADMIN ДЛЯ ФОТОГАЛЕРЕИ И ВИДЕО
+# =============================================================================
+
+class PhotoInline(admin.TabularInline):
+    model = Photo
+    extra = 0
+    fields = ['title_ru', 'image', 'tags_ru', 'order', 'is_active']
+    readonly_fields = ['uploaded_at']
+
+
+@admin.register(PhotoAlbum)
+class PhotoAlbumAdmin(admin.ModelAdmin):
+    list_display = ['title_ru', 'event_date', 'photo_count', 'is_active', 'order']
+    list_filter = ['is_active', 'event_date']
+    search_fields = ['title_ru', 'title_kg', 'title_en', 'tags_ru']
+    inlines = [PhotoInline]
+    ordering = ['-event_date', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ['cover_image', 'event_date', 'order', 'is_active']
+        }),
+        ('Русский', {
+            'fields': ['title_ru', 'description_ru', 'tags_ru'],
+        }),
+        ('Кыргызский', {
+            'fields': ['title_kg', 'description_kg', 'tags_kg'],
+            'classes': ['collapse']
+        }),
+        ('Английский', {
+            'fields': ['title_en', 'description_en', 'tags_en'],
+            'classes': ['collapse']
+        }),
+    )
+
+
+@admin.register(Photo)
+class PhotoAdmin(admin.ModelAdmin):
+    list_display = ['title_ru', 'album', 'photographer', 'order', 'is_active', 'uploaded_at']
+    list_filter = ['album', 'is_active', 'uploaded_at']
+    search_fields = ['title_ru', 'title_kg', 'title_en', 'tags_ru', 'photographer']
+    ordering = ['album', 'order', '-uploaded_at']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ['album', 'image', 'photographer', 'order', 'is_active']
+        }),
+        ('Русский', {
+            'fields': ['title_ru', 'description_ru', 'tags_ru'],
+        }),
+        ('Кыргызский', {
+            'fields': ['title_kg', 'description_kg', 'tags_kg'],
+            'classes': ['collapse']
+        }),
+        ('Английский', {
+            'fields': ['title_en', 'description_en', 'tags_en'],
+            'classes': ['collapse']
+        }),
+    )
+
+
+@admin.register(VideoContent)
+class VideoContentAdmin(admin.ModelAdmin):
+    list_display = ['title_ru', 'type', 'duration', 'views_count', 'is_featured', 'is_active', 'created_at']
+    list_filter = ['type', 'is_active', 'is_featured', 'event_date']
+    search_fields = ['title_ru', 'title_kg', 'title_en', 'tags_ru']
+    ordering = ['-created_at', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ['type', 'video_file', 'video_url', 'thumbnail', 'duration', 'event_date', 'is_featured', 'is_active', 'order']
+        }),
+        ('Статистика', {
+            'fields': ['views_count'],
+            'classes': ['collapse']
+        }),
+        ('Русский', {
+            'fields': ['title_ru', 'description_ru', 'tags_ru'],
+        }),
+        ('Кыргызский', {
+            'fields': ['title_kg', 'description_kg', 'tags_kg'],
+            'classes': ['collapse']
+        }),
+        ('Английский', {
+            'fields': ['title_en', 'description_en', 'tags_en'],
+            'classes': ['collapse']
+        }),
+    )
+
+
+@admin.register(StudentLifeStatistic)
+class StudentLifeStatisticAdmin(admin.ModelAdmin):
+    list_display = ['label_ru', 'type', 'value', 'order', 'is_active', 'last_updated']
+    list_filter = ['type', 'is_active']
+    search_fields = ['label_ru', 'label_kg', 'label_en']
+    ordering = ['order', 'type']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ['type', 'value', 'icon', 'order', 'is_active']
+        }),
+        ('Русский', {
+            'fields': ['label_ru', 'description_ru'],
+        }),
+        ('Кыргызский', {
+            'fields': ['label_kg', 'description_kg'],
+            'classes': ['collapse']
+        }),
+        ('Английский', {
+            'fields': ['label_en', 'description_en'],
             'classes': ['collapse']
         }),
     )

@@ -86,7 +86,7 @@ class GrantAdmin(admin.ModelAdmin):
             'fields': ('description_ru', 'description_en', 'description_kg')
         }),
         ('Контакты', {
-            'fields': ('contact', 'website')
+            'fields': ('contact', 'website', 'application_url')
         }),
         ('Настройки', {
             'fields': ('is_active',)

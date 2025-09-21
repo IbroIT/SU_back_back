@@ -5,14 +5,77 @@ from rest_framework.permissions import AllowAny
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from .models import PartnerOrganization, StudentAppeal
-from .serializers import PartnerOrganizationSerializer, StudentAppealSerializer
+from .models import (
+    PartnerOrganization, StudentAppeal, PhotoAlbum, Photo, 
+    VideoContent, StudentLifeStatistic
+)
+from .serializers import (
+    PartnerOrganizationSerializer, StudentAppealSerializer,
+    PhotoAlbumSerializer, PhotoSerializer, VideoContentSerializer,
+    StudentLifeStatisticSerializer
+)
 
 
 class PartnerOrganizationViewSet(viewsets.ModelViewSet):
     queryset = PartnerOrganization.objects.filter(is_active=True)
     serializer_class = PartnerOrganizationSerializer
     permission_classes = [AllowAny]
+
+
+class PhotoAlbumViewSet(viewsets.ModelViewSet):
+    """ViewSet для фотоальбомов"""
+    queryset = PhotoAlbum.objects.filter(is_active=True)
+    serializer_class = PhotoAlbumSerializer
+    permission_classes = [AllowAny]
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    @action(detail=True, methods=['get'])
+    def photos(self, request, pk=None):
+        """Получить все фотографии альбома"""
+        album = self.get_object()
+        photos = album.photos.filter(is_active=True)
+        serializer = PhotoSerializer(photos, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+class PhotoViewSet(viewsets.ModelViewSet):
+    """ViewSet для фотографий"""
+    queryset = Photo.objects.filter(is_active=True)
+    serializer_class = PhotoSerializer
+    permission_classes = [AllowAny]
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+
+class VideoContentViewSet(viewsets.ModelViewSet):
+    """ViewSet для видеоконтента"""
+    queryset = VideoContent.objects.filter(is_active=True)
+    serializer_class = VideoContentSerializer
+    permission_classes = [AllowAny]
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    @action(detail=True, methods=['post'])
+    def increment_views(self, request, pk=None):
+        """Увеличить счетчик просмотров"""
+        video = self.get_object()
+        video.views_count += 1
+        video.save()
+        return Response({'views_count': video.views_count})
+
+
+class StudentLifeStatisticViewSet(viewsets.ModelViewSet):
+    """ViewSet для статистики студенческой жизни"""
+    queryset = StudentLifeStatistic.objects.filter(is_active=True)
+    serializer_class = StudentLifeStatisticSerializer
+    permission_classes = [AllowAny]
+
+    def get_serializer_context(self):
+        return {'request': self.request}
 
 
 # =============================================================================
@@ -1188,3 +1251,160 @@ Email: {appeal.email}
             )
         except Exception as e:
             print(f"Ошибка отправки email: {e}")
+
+
+# =============================================================================
+# НОВЫЕ API ENDPOINTS ДЛЯ ГАЛЕРЕИ И ОБЗОРА СТУДЕНЧЕСКОЙ ЖИЗНИ
+# =============================================================================
+
+@api_view(['GET'])
+def gallery_data(request):
+    """API endpoint для данных галереи"""
+    try:
+        albums = PhotoAlbum.objects.filter(is_active=True)
+        photos = Photo.objects.filter(is_active=True)
+        
+        # Сериализация данных
+        albums_serializer = PhotoAlbumSerializer(albums, many=True, context={'request': request})
+        photos_serializer = PhotoSerializer(photos, many=True, context={'request': request})
+        
+        # Формируем структуру данных, совместимую с фронтендом
+        albums_data = []
+        for album_data in albums_serializer.data:
+            # Преобразуем для совместимости с фронтендом
+            album_compatible = {
+                'id': album_data['id'],
+                'titleKey': f"gallery.albums.album{album_data['id']}.title",
+                'title': album_data['title'],
+                'photoCount': album_data['photo_count'],
+                'cover': album_data['cover'],
+                'tagsKey': f"gallery.albums.album{album_data['id']}.tags",
+                'tags': album_data['tags'],
+                'event_date': album_data['event_date'],
+                'order': album_data['order']
+            }
+            albums_data.append(album_compatible)
+        
+        photos_data = []
+        for photo_data in photos_serializer.data:
+            # Преобразуем для совместимости с фронтендом
+            photo_compatible = {
+                'id': photo_data['id'],
+                'albumId': photo_data.get('album_id'),  # Нужно добавить это поле в сериализатор
+                'url': photo_data['url'],
+                'titleKey': f"gallery.photos.photo{photo_data['id']}.title",
+                'title': photo_data['title'],
+                'tagsKey': f"gallery.photos.photo{photo_data['id']}.tags",
+                'tags': photo_data['tags'],
+                'photographer': photo_data['photographer'],
+                'uploaded_at': photo_data['uploaded_at']
+            }
+            photos_data.append(photo_compatible)
+        
+        response_data = {
+            'albums': albums_data,
+            'photos': photos_data
+        }
+        
+        return Response(response_data)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Ошибка загрузки данных галереи: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+def life_overview_data(request):
+    """API endpoint для данных обзора студенческой жизни"""
+    try:
+        # Получаем фотографии для коллажа (последние 12)
+        recent_photos = Photo.objects.filter(is_active=True).order_by('-uploaded_at')[:12]
+        photos_serializer = PhotoSerializer(recent_photos, many=True, context={'request': request})
+        
+        # Получаем видео (рекомендуемые или последние)
+        featured_videos = VideoContent.objects.filter(is_active=True, is_featured=True)[:3]
+        if featured_videos.count() < 3:
+            # Если рекомендуемых видео недостаточно, дополняем последними
+            additional_videos = VideoContent.objects.filter(is_active=True).exclude(
+                id__in=featured_videos.values_list('id', flat=True)
+            ).order_by('-created_at')[:3-featured_videos.count()]
+            featured_videos = list(featured_videos) + list(additional_videos)
+        
+        videos_serializer = VideoContentSerializer(featured_videos, many=True, context={'request': request})
+        
+        # Получаем статистику
+        statistics = StudentLifeStatistic.objects.filter(is_active=True).order_by('order')
+        stats_serializer = StudentLifeStatisticSerializer(statistics, many=True, context={'request': request})
+        
+        # Формируем фото-URLs для коллажа
+        photo_urls = [photo_data['url'] for photo_data in photos_serializer.data if photo_data['url']]
+        
+        # Формируем данные видео в формате, ожидаемом фронтендом
+        video_data = []
+        for video in videos_serializer.data:
+            video_compatible = {
+                'id': video['id'],
+                'titleKey': f"life.videos.video{video['id']}.title",
+                'title': video['title'],
+                'thumbnail': video['thumbnail_url'],
+                'url': video['video_source'],
+                'durationKey': 'life.videos.duration',
+                'duration': video['duration'] if video['duration'] else '3:24',
+                'type': video['type'],
+                'views_count': video['views_count']
+            }
+            video_data.append(video_compatible)
+        
+        # Формируем статистику в формате, ожидаемом фронтендом
+        stats_data = []
+        for stat in stats_serializer.data:
+            stat_compatible = {
+                'value': stat['value'],
+                'labelKey': f"life.stats.{stat['type']}.label",
+                'label': stat['label'],
+                'type': stat['type'],
+                'icon': stat['icon']
+            }
+            stats_data.append(stat_compatible)
+        
+        # Если статистики нет в базе, используем дефолтные значения
+        if not stats_data:
+            stats_data = [
+                {
+                    'value': '15+',
+                    'labelKey': 'life.stats.clubs.label',
+                    'label': 'Клубы и организации',
+                    'type': 'clubs'
+                },
+                {
+                    'value': '50+',
+                    'labelKey': 'life.stats.events.label', 
+                    'label': 'Мероприятий в год',
+                    'type': 'events'
+                },
+                {
+                    'value': f'{len(photo_urls)}+',
+                    'labelKey': 'life.stats.photos.label',
+                    'label': 'Фотографий',
+                    'type': 'photos'
+                }
+            ]
+        
+        response_data = {
+            'photo_urls': photo_urls,
+            'video_data': video_data,
+            'stats': stats_data,
+            'total_photos': Photo.objects.filter(is_active=True).count(),
+            'total_albums': PhotoAlbum.objects.filter(is_active=True).count(),
+            'total_videos': VideoContent.objects.filter(is_active=True).count()
+        }
+        
+        return Response(response_data)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Ошибка загрузки данных обзора: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

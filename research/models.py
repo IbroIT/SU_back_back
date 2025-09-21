@@ -113,6 +113,7 @@ class Grant(models.Model):
     
     contact = models.EmailField("Контактный email")
     website = models.URLField("Веб-сайт")
+    application_url = models.URLField("Ссылка для подачи заявки", blank=True, help_text="Внешняя ссылка для подачи заявки на грант")
     
     is_active = models.BooleanField("Активно", default=True)
     created_at = models.DateTimeField("Создано", auto_now_add=True)
