@@ -1,1 +1,7 @@
 .env
+db.sqlite3
+banners/
+media/
+__pycache__/
+venv/
+.idea/
