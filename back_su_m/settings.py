@@ -213,3 +213,10 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@salymbekov.e
 # Email addresses for different purposes
 ADMISSIONS_EMAIL_TO = os.environ.get('ADMISSIONS_EMAIL_TO', 'adilhansatymkulov40@gmail.com')
 STUDENT_APPEALS_EMAIL_TO = os.environ.get('STUDENT_APPEALS_EMAIL_TO', 'adilhansatymkulov40@gmail.com')
+
+# File handling settings
+DEFAULT_CHARSET = 'utf-8'
+FILE_CHARSET = 'utf-8'
+
+# Response settings for proper UTF-8 handling
+DEFAULT_CONTENT_TYPE = 'text/html; charset=utf-8'

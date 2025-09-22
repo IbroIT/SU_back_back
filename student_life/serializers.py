@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from .models import (
     PartnerOrganization, StudentAppeal, OrganizationSpecialization,
-    PhotoAlbum, Photo, VideoContent, StudentLifeStatistic
+    PhotoAlbum, Photo, VideoContent, StudentLifeStatistic,
+    InternshipRequirement, InternshipRequirementItem, ReportTemplate,
+    StudentGuide, GuideRequirement, GuideStep, GuideStepDetail
 )
 
 
@@ -216,31 +218,138 @@ class StudentLifeStatisticSerializer(serializers.ModelSerializer):
         return obj.label_ru
 
 
-class OrganizationSpecializationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OrganizationSpecialization
-        fields = ['id', 'name_ru', 'name_kg', 'name_en']
-
-
-class PartnerOrganizationSerializer(serializers.ModelSerializer):
-    specializations = OrganizationSpecializationSerializer(many=True, read_only=True)
+class InternshipRequirementItemSerializer(serializers.ModelSerializer):
+    """Сериализатор для элементов требований к практике"""
+    text = serializers.SerializerMethodField()
     
     class Meta:
-        model = PartnerOrganization
-        fields = [
-            'id', 'name_ru', 'name_kg', 'name_en',
-            'description_ru', 'description_kg', 'description_en',
-            'type', 'location', 'contact_person', 'phone', 'email', 
-            'website', 'is_active', 'specializations'
-        ]
+        model = InternshipRequirementItem
+        fields = ['id', 'text_ru', 'text_kg', 'text_en', 'text', 'order']
+    
+    def get_text(self, obj):
+        """Возвращает текст на текущем языке"""
+        request = self.context.get('request')
+        if request:
+            lang = request.GET.get('lang', 'ru')
+            return getattr(obj, f'text_{lang}', obj.text_ru)
+        return obj.text_ru
 
 
-class StudentAppealSerializer(serializers.ModelSerializer):
+class InternshipRequirementSerializer(serializers.ModelSerializer):
+    """Сериализатор для требований к практике"""
+    items = InternshipRequirementItemSerializer(many=True, read_only=True)
+    title = serializers.SerializerMethodField()
+    
     class Meta:
-        model = StudentAppeal
+        model = InternshipRequirement
         fields = [
-            'id', 'full_name', 'email', 'phone', 'student_id',
-            'category', 'subject', 'message', 'attachment',
-            'status', 'response', 'created_at', 'updated_at', 'processed_by'
+            'id', 'title_ru', 'title_kg', 'title_en', 'title',
+            'description_ru', 'description_kg', 'description_en',
+            'category', 'order', 'items'
         ]
-        read_only_fields = ['status', 'response', 'processed_by', 'created_at', 'updated_at']
+    
+    def get_title(self, obj):
+        """Возвращает заголовок на текущем языке"""
+        request = self.context.get('request')
+        if request:
+            lang = request.GET.get('lang', 'ru')
+            return getattr(obj, f'title_{lang}', obj.title_ru)
+        return obj.title_ru
+
+
+class ReportTemplateSerializer(serializers.ModelSerializer):
+    """Сериализатор для шаблонов отчетов"""
+    name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    file_url = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ReportTemplate
+        fields = [
+            'id', 'name_ru', 'name_kg', 'name_en', 'name',
+            'description_ru', 'description_kg', 'description_en', 'description',
+            'file', 'file_url', 'download_url', 'created_at'
+        ]
+    
+    def get_name(self, obj):
+        """Возвращает название на текущем языке"""
+        request = self.context.get('request')
+        if request:
+            lang = request.GET.get('lang', 'ru')
+            return getattr(obj, f'name_{lang}', obj.name_ru)
+        return obj.name_ru
+    
+    def get_description(self, obj):
+        """Возвращает описание на текущем языке"""
+        request = self.context.get('request')
+        if request:
+            lang = request.GET.get('lang', 'ru')
+            return getattr(obj, f'description_{lang}', obj.description_ru)
+        return obj.description_ru
+    
+    def get_file_url(self, obj):
+        """Возвращает полный URL файла"""
+        request = self.context.get('request')
+        if obj.file and request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url if obj.file else None
+    
+    def get_download_url(self, obj):
+        """Возвращает URL для безопасного скачивания"""
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(f'/api/student-life/api/download/{obj.id}/')
+        return f'/api/student-life/api/download/{obj.id}/'
+
+
+# =============================================================================
+# SERIALIZERS ДЛЯ ИНСТРУКЦИЙ
+# =============================================================================
+
+class GuideStepDetailSerializer(serializers.ModelSerializer):
+    """Сериализатор для деталей шагов инструкций"""
+    
+    class Meta:
+        model = GuideStepDetail
+        fields = ['id', 'text_ru', 'text_kg', 'text_en', 'order']
+
+
+class GuideStepSerializer(serializers.ModelSerializer):
+    """Сериализатор для шагов инструкций"""
+    details = GuideStepDetailSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = GuideStep
+        fields = [
+            'id', 'title_ru', 'title_kg', 'title_en',
+            'description_ru', 'description_kg', 'description_en',
+            'timeframe_ru', 'timeframe_kg', 'timeframe_en',
+            'step_number', 'order', 'details'
+        ]
+
+
+class GuideRequirementSerializer(serializers.ModelSerializer):
+    """Сериализатор для требований инструкций"""
+    
+    class Meta:
+        model = GuideRequirement
+        fields = ['id', 'text_ru', 'text_kg', 'text_en', 'order']
+
+
+class StudentGuideSerializer(serializers.ModelSerializer):
+    """Сериализатор для инструкций студентов"""
+    requirements = GuideRequirementSerializer(many=True, read_only=True)
+    steps = GuideStepSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = StudentGuide
+        fields = [
+            'id', 'title_ru', 'title_kg', 'title_en',
+            'description_ru', 'description_kg', 'description_en',
+            'estimated_time_ru', 'estimated_time_kg', 'estimated_time_en',
+            'max_duration_ru', 'max_duration_kg', 'max_duration_en',
+            'contact_info_ru', 'contact_info_kg', 'contact_info_en',
+            'category', 'icon', 'order', 'is_active', 'created_at',
+            'requirements', 'steps'
+        ]
