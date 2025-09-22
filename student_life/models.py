@@ -606,3 +606,217 @@ class StudentAppeal(models.Model):
 
     def __str__(self):
         return f"{self.full_name} - {self.subject}"
+
+
+# =============================================================================
+# МОДЕЛИ ДЛЯ ФОТОГАЛЕРЕИ И ВИДЕО
+# =============================================================================
+
+class PhotoAlbum(models.Model):
+    """Фотоальбомы студенческой жизни"""
+    # Мультиязычные поля
+    title_ru = models.CharField('Название альбома (русский)', max_length=255)
+    title_kg = models.CharField('Название альбома (кыргызский)', max_length=255)
+    title_en = models.CharField('Название альбома (английский)', max_length=255)
+    
+    description_ru = models.TextField('Описание (русский)', blank=True)
+    description_kg = models.TextField('Описание (кыргызский)', blank=True)
+    description_en = models.TextField('Описание (английский)', blank=True)
+    
+    # Обложка альбома
+    cover_image = models.ImageField(
+        upload_to='photo_albums/covers/',
+        verbose_name=_('Обложка альбома')
+    )
+    
+    # Теги для поиска
+    tags_ru = models.TextField('Теги (русский)', help_text='Разделяйте запятыми', blank=True)
+    tags_kg = models.TextField('Теги (кыргызский)', help_text='Разделяйте запятыми', blank=True)
+    tags_en = models.TextField('Теги (английский)', help_text='Разделяйте запятыми', blank=True)
+    
+    # Немультиязычные поля
+    event_date = models.DateField(_('Дата события'))
+    is_active = models.BooleanField(_('Активен'), default=True)
+    order = models.PositiveIntegerField(_('Порядок'), default=0)
+    created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Дата обновления'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Фотоальбом')
+        verbose_name_plural = _('Фотоальбомы')
+        ordering = ['-event_date', 'order']
+
+    def __str__(self):
+        return self.title_ru
+
+    @property
+    def photo_count(self):
+        """Количество фотографий в альбоме"""
+        return self.photos.filter(is_active=True).count()
+
+
+class Photo(models.Model):
+    """Фотографии в альбомах"""
+    album = models.ForeignKey(
+        PhotoAlbum,
+        on_delete=models.CASCADE,
+        related_name='photos',
+        verbose_name=_('Альбом')
+    )
+    
+    # Мультиязычные поля
+    title_ru = models.CharField('Название фото (русский)', max_length=255, blank=True)
+    title_kg = models.CharField('Название фото (кыргызский)', max_length=255, blank=True)
+    title_en = models.CharField('Название фото (английский)', max_length=255, blank=True)
+    
+    description_ru = models.TextField('Описание (русский)', blank=True)
+    description_kg = models.TextField('Описание (кыргызский)', blank=True)
+    description_en = models.TextField('Описание (английский)', blank=True)
+    
+    # Файл изображения
+    image = models.ImageField(
+        upload_to='photos/',
+        verbose_name=_('Изображение'),
+        blank=True,
+        null=True
+    )
+    
+    # URL изображения (для внешних ссылок)
+    url = models.URLField(
+        verbose_name=_('URL изображения'),
+        blank=True,
+        null=True,
+        help_text='Ссылка на внешнее изображение (альтернатива загрузке файла)'
+    )
+    
+    # Теги для поиска
+    tags_ru = models.TextField('Теги (русский)', help_text='Разделяйте запятыми', blank=True)
+    tags_kg = models.TextField('Теги (кыргызский)', help_text='Разделяйте запятыми', blank=True)
+    tags_en = models.TextField('Теги (английский)', help_text='Разделяйте запятыми', blank=True)
+    
+    # Немультиязычные поля
+    photographer = models.CharField(_('Фотограф'), max_length=255, blank=True)
+    is_active = models.BooleanField(_('Активно'), default=True)
+    order = models.PositiveIntegerField(_('Порядок'), default=0)
+    uploaded_at = models.DateTimeField(_('Дата загрузки'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Фотография')
+        verbose_name_plural = _('Фотографии')
+        ordering = ['order', '-uploaded_at']
+
+    def __str__(self):
+        return f"{self.album.title_ru} - {self.title_ru or f'Фото {self.id}'}"
+
+
+class VideoContent(models.Model):
+    """Видеоконтент студенческой жизни"""
+    VIDEO_TYPE_CHOICES = [
+        ('event', _('Мероприятие')),
+        ('interview', _('Интервью')),
+        ('tutorial', _('Обучающее видео')),
+        ('announcement', _('Объявление')),
+        ('documentary', _('Документальное')),
+    ]
+    
+    # Мультиязычные поля
+    title_ru = models.CharField('Название видео (русский)', max_length=255)
+    title_kg = models.CharField('Название видео (кыргызский)', max_length=255)
+    title_en = models.CharField('Название видео (английский)', max_length=255)
+    
+    description_ru = models.TextField('Описание (русский)', blank=True)
+    description_kg = models.TextField('Описание (кыргызский)', blank=True)
+    description_en = models.TextField('Описание (английский)', blank=True)
+    
+    # Файлы
+    video_file = models.FileField(
+        upload_to='videos/',
+        validators=[FileExtensionValidator(['mp4', 'avi', 'mov', 'wmv'])],
+        verbose_name=_('Видеофайл'),
+        blank=True,
+        null=True
+    )
+    
+    video_url = models.URLField(_('Ссылка на видео'), blank=True, help_text='YouTube, Vimeo и т.д.')
+    
+    thumbnail = models.ImageField(
+        upload_to='video_thumbnails/',
+        verbose_name=_('Превью видео'),
+        blank=True,
+        null=True
+    )
+    
+    # URL превью (для внешних ссылок)
+    thumbnail_url = models.URLField(
+        verbose_name=_('URL превью'),
+        blank=True,
+        null=True,
+        help_text='Ссылка на внешнее превью (альтернатива загрузке файла)'
+    )
+    
+    # Теги для поиска
+    tags_ru = models.TextField('Теги (русский)', help_text='Разделяйте запятыми', blank=True)
+    tags_kg = models.TextField('Теги (кыргызский)', help_text='Разделяйте запятыми', blank=True)
+    tags_en = models.TextField('Теги (английский)', help_text='Разделяйте запятыми', blank=True)
+    
+    # Немультиязычные поля
+    type = models.CharField(_('Тип видео'), max_length=20, choices=VIDEO_TYPE_CHOICES)
+    duration = models.CharField(_('Продолжительность'), max_length=20, blank=True)
+    event_date = models.DateField(_('Дата события'), blank=True, null=True)
+    views_count = models.PositiveIntegerField(_('Количество просмотров'), default=0)
+    is_active = models.BooleanField(_('Активно'), default=True)
+    is_featured = models.BooleanField(_('Рекомендуемое'), default=False)
+    order = models.PositiveIntegerField(_('Порядок'), default=0)
+    created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Дата обновления'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Видеоконтент')
+        verbose_name_plural = _('Видеоконтент')
+        ordering = ['-created_at', 'order']
+
+    def __str__(self):
+        return self.title_ru
+
+    def get_video_source(self):
+        """Возвращает источник видео (файл или URL)"""
+        return self.video_file.url if self.video_file else self.video_url
+
+
+class StudentLifeStatistic(models.Model):
+    """Статистика студенческой жизни"""
+    STATISTIC_TYPE_CHOICES = [
+        ('clubs', _('Клубы и организации')),
+        ('events', _('Мероприятия')),
+        ('photos', _('Фотографии')),
+        ('videos', _('Видео')),
+        ('students', _('Активные студенты')),
+        ('achievements', _('Достижения')),
+    ]
+    
+    # Мультиязычные поля
+    label_ru = models.CharField('Название показателя (русский)', max_length=255)
+    label_kg = models.CharField('Название показателя (кыргызский)', max_length=255)
+    label_en = models.CharField('Название показателя (английский)', max_length=255)
+    
+    description_ru = models.TextField('Описание (русский)', blank=True)
+    description_kg = models.TextField('Описание (кыргызский)', blank=True)
+    description_en = models.TextField('Описание (английский)', blank=True)
+    
+    # Значение статистики
+    value = models.CharField(_('Значение'), max_length=50)
+    
+    # Немультиязычные поля
+    type = models.CharField(_('Тип статистики'), max_length=20, choices=STATISTIC_TYPE_CHOICES)
+    icon = models.CharField(_('Иконка'), max_length=100, blank=True)
+    is_active = models.BooleanField(_('Активна'), default=True)
+    order = models.PositiveIntegerField(_('Порядок'), default=0)
+    last_updated = models.DateTimeField(_('Последнее обновление'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Статистика студенческой жизни')
+        verbose_name_plural = _('Статистика студенческой жизни')
+        ordering = ['order', 'type']
+
+    def __str__(self):
+        return f"{self.label_ru}: {self.value}"

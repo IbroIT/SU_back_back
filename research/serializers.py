@@ -45,7 +45,7 @@ class GrantListSerializer(serializers.ModelSerializer):
             'organization_ru', 'organization_en', 'organization_kg', 
             'amount', 'deadline', 'category', 'status',
             'duration_ru', 'duration_en', 'duration_kg',
-            'is_deadline_soon'
+            'application_url', 'is_deadline_soon'
         ]
 
 
@@ -62,7 +62,7 @@ class GrantDetailSerializer(serializers.ModelSerializer):
             'duration_ru', 'duration_en', 'duration_kg',
             'requirements_ru', 'requirements_en', 'requirements_kg',
             'description_ru', 'description_en', 'description_kg',
-            'contact', 'website', 'is_deadline_soon', 'created_at'
+            'contact', 'website', 'application_url', 'is_deadline_soon', 'created_at'
         ]
 
 

@@ -16,7 +16,7 @@ urlpatterns = [
     path('api/documents/', include('documents.urls')),  # Documents API endpoints
     path('api/student-life/', include('student_life.urls')),  # Student Life API endpoints
     path('api/media-coverage/', include('media_coverage.urls')),  # Media Coverage API endpoints
-    path('', include('hsm.urls')),  # HSM API endpoints
+    path('api/', include('hsm.urls')),  # HSM API endpoints
 ]
 
 # Serve media files during development
