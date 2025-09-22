@@ -101,13 +101,6 @@ class FacultyViewSet(viewsets.ReadOnlyModelViewSet):
                 position=position_code
             ).order_by('order', 'last_name')
             
-<<<<<<< HEAD
-            serializer = FacultySerializer(faculty, many=True)
-            result[position_code] = {
-                'name': position_name,
-                'faculty': serializer.data
-            }
-=======
             if faculty.exists():  # Только если есть преподаватели с такой должностью
                 serializer = FacultySerializer(faculty, many=True)
                 result[position_code] = {
@@ -116,7 +109,6 @@ class FacultyViewSet(viewsets.ReadOnlyModelViewSet):
                     'name_en': position_translations.get(position_code, {}).get('en', position_name),
                     'faculty': serializer.data
                 }
->>>>>>> c00094fbb5af6df0856986206af95759d5ce7948
         
         return Response(result)
 
