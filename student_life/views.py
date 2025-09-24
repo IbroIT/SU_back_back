@@ -5,14 +5,20 @@ from rest_framework.permissions import AllowAny
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
+from django.http import HttpResponse, Http404, FileResponse
+from django.utils.encoding import force_str
+import os
+import mimetypes
 from .models import (
     PartnerOrganization, StudentAppeal, PhotoAlbum, Photo, 
-    VideoContent, StudentLifeStatistic
+    VideoContent, StudentLifeStatistic, InternshipRequirement, ReportTemplate,
+    StudentGuide, GuideRequirement, GuideStep, GuideStepDetail
 )
 from .serializers import (
     PartnerOrganizationSerializer, StudentAppealSerializer,
     PhotoAlbumSerializer, PhotoSerializer, VideoContentSerializer,
-    StudentLifeStatisticSerializer
+    StudentLifeStatisticSerializer, InternshipRequirementSerializer,
+    ReportTemplateSerializer, StudentGuideSerializer
 )
 
 
@@ -20,6 +26,9 @@ class PartnerOrganizationViewSet(viewsets.ModelViewSet):
     queryset = PartnerOrganization.objects.filter(is_active=True)
     serializer_class = PartnerOrganizationSerializer
     permission_classes = [AllowAny]
+    
+    def get_serializer_context(self):
+        return {'request': self.request}
 
 
 class PhotoAlbumViewSet(viewsets.ModelViewSet):
@@ -88,7 +97,7 @@ def internships_data(request):
     try:
         # Получаем организации-партнеры
         organizations = PartnerOrganization.objects.filter(is_active=True)
-        organizations_data = PartnerOrganizationSerializer(organizations, many=True).data
+        organizations_data = PartnerOrganizationSerializer(organizations, many=True, context={'request': request}).data
         
         # Добавляем совместимость с фронтендом для specializations
         for org in organizations_data:
@@ -100,38 +109,49 @@ def internships_data(request):
                 for spec in org['specializations']:
                     spec['name'] = spec['name_ru']  # Добавляем name для совместимости
         
-        # Создаем структуру требований (пока заглушка)
-        requirements = {
-            'academic': [
-                {
-                    'title': 'Академические требования',
-                    'items': [
-                        {'text': 'Средний балл не ниже 3.0'},
-                        {'text': 'Прохождение базовых курсов'}
-                    ]
-                }
-            ],
-            'documents': [
-                {
-                    'title': 'Необходимые документы',
-                    'items': [
-                        {'text': 'Справка об обучении'},
-                        {'text': 'Медицинская справка'}
-                    ]
-                }
-            ]
-        }
+        # Получаем требования к практике из базы данных
+        internship_requirements = InternshipRequirement.objects.filter(is_active=True).prefetch_related('items')
+        requirements_serializer = InternshipRequirementSerializer(internship_requirements, many=True, context={'request': request})
+        requirements = {}
         
-        # Создаем шаблоны отчетов (пока заглушка)
-        report_templates = [
-            {
-                'title': 'Шаблон отчета по практике',
-                'description': 'Стандартный шаблон для отчета',
-                'format': 'DOCX',
-                'file_size': '450 KB',
-                'file': '/media/templates/internship_report.docx'
-            }
-        ]
+        for req_data in requirements_serializer.data:
+            category = req_data['category']
+            if category not in requirements:
+                requirements[category] = []
+            requirements[category].append(req_data)
+        
+        # Получаем шаблоны отчетов из базы данных
+        templates = ReportTemplate.objects.filter(is_active=True)
+        templates_serializer = ReportTemplateSerializer(templates, many=True, context={'request': request})
+        report_templates = []
+        
+        for template_data in templates_serializer.data:
+            # Определяем формат файла и размер
+            file_format = 'DOC'
+            file_size = 'N/A'
+            
+            if template_data['file']:
+                file_url = template_data['file']
+                if file_url.lower().endswith('.docx'):
+                    file_format = 'DOCX'
+                elif file_url.lower().endswith('.pdf'):
+                    file_format = 'PDF'
+            
+            report_templates.append({
+                'id': template_data['id'],
+                'title': template_data['name'],
+                'description': template_data['description'],
+                'title_ru': template_data.get('name_ru', template_data['name']),
+                'title_kg': template_data.get('name_kg', template_data['name']),
+                'title_en': template_data.get('name_en', template_data['name']),
+                'description_ru': template_data.get('description_ru', template_data['description']),
+                'description_kg': template_data.get('description_kg', template_data['description']),
+                'description_en': template_data.get('description_en', template_data['description']),
+                'format': file_format,
+                'file_size': file_size,  # Размер можно получить из файла
+                'file': template_data['file_url'],
+                'download_url': template_data['download_url']
+            })
         
         data = {
             'partner_organizations': organizations_data,
@@ -447,93 +467,8 @@ def regulations_data(request):
                         }
                     ]
                 }
-            ],
-            "downloadable_files": [
-                {
-                    "title_ru": "Устав университета",
-                    "title_kg": "Университеттин уставы",
-                    "title_en": "University Charter",
-                    "description_ru": "Основной документ, регламентирующий деятельность университета",
-                    "description_kg": "Университеттин ишин жөнгө салган негизги документ",
-                    "description_en": "Main document regulating university activities",
-                    "type": "PDF",
-                    "format": "PDF",
-                    "file_size": "2.5 MB",
-                    "last_updated": "2024-01-15",
-                    "download_url": "http://localhost:8000/media/documents/charter.pdf"
-                },
-                {
-                    "title_ru": "Правила внутреннего распорядка",
-                    "title_kg": "Ички тартип эрежелери",
-                    "title_en": "Internal Regulations",
-                    "description_ru": "Подробные правила поведения студентов и сотрудников",
-                    "description_kg": "Студенттердин жана кызматкерлердин жүрүм-турумунун толук эрежелери",
-                    "description_en": "Detailed behavior rules for students and staff",
-                    "type": "PDF",
-                    "format": "PDF",
-                    "file_size": "1.8 MB",
-                    "last_updated": "2024-02-01",
-                    "download_url": "http://localhost:8000/media/documents/internal_rules.pdf"
-                },
-                {
-                    "title_ru": "Положение об экзаменах",
-                    "title_kg": "Экзамендер жөнүндө жобо",
-                    "title_en": "Examination Regulations",
-                    "description_ru": "Полное руководство по проведению промежуточной и итоговой аттестации",
-                    "description_kg": "Аралык жана жыйынтыктоочу аттестацияны өткөрүү боюнча толук жетекчилик",
-                    "description_en": "Complete guide for conducting intermediate and final assessments",
-                    "type": "PDF",
-                    "format": "PDF",
-                    "file_size": "3.2 MB",
-                    "last_updated": "2024-01-20",
-                    "download_url": "http://localhost:8000/media/documents/exam_regulations.pdf"
-                },
-                {
-                    "title_ru": "Методические рекомендации по написанию дипломной работы",
-                    "title_kg": "Дипломдук иш жазуу боюнча методикалык сунуштар",
-                    "title_en": "Guidelines for Writing Diploma Thesis",
-                    "description_ru": "Требования к структуре, оформлению и защите выпускной квалификационной работы",
-                    "description_kg": "Бүтүрүү квалификациялык ишинин түзүлүшү, түзүлүшү жана коргоого талаптар",
-                    "description_en": "Requirements for structure, formatting and defense of graduation thesis",
-                    "type": "DOCX",
-                    "format": "DOCX",
-                    "file_size": "850 KB",
-                    "last_updated": "2024-02-10",
-                    "download_url": "http://localhost:8000/media/documents/thesis_guidelines.docx"
-                },
-                {
-                    "title_ru": "Академический календарь 2024-2025",
-                    "title_kg": "2024-2025 академиялык календары",
-                    "title_en": "Academic Calendar 2024-2025",
-                    "description_ru": "Расписание учебного года, экзаменационных сессий и каникул",
-                    "description_kg": "Окуу жылынын, экзамен сессияларынын жана эс алуулардын расписаниеси",
-                    "description_en": "Schedule of academic year, examination sessions and holidays",
-                    "type": "PDF",
-                    "format": "PDF",
-                    "file_size": "1.1 MB",
-                    "last_updated": "2024-08-01",
-                    "download_url": "http://localhost:8000/media/documents/academic_calendar.pdf"
-                }
             ]
         }
-        
-        # Адаптируем данные под структуру, ожидаемую фронтендом
-        # Фронтенд ожидает title, text без суффиксов, поэтому добавляем их для совместимости
-        for rule in response_data["internal_rules"]:
-            rule["title"] = rule["title_ru"]  # Добавляем для совместимости
-            for content_item in rule["content"]:
-                content_item["text"] = content_item["text_ru"]  # Добавляем для совместимости
-        
-        for regulation in response_data["academic_regulations"]:
-            regulation["title"] = regulation["title_ru"]  # Добавляем для совместимости
-            for section in regulation["sections"]:
-                section["subtitle"] = section["subtitle_ru"]  # Добавляем для совместимости
-                for rule in section["rules"]:
-                    rule["text"] = rule["text_ru"]  # Добавляем для совместимости
-        
-        for file_item in response_data["downloadable_files"]:
-            file_item["title"] = file_item["title_ru"]  # Добавляем для совместимости
-            file_item["description"] = file_item["description_ru"]  # Добавляем для совместимости
         
         return Response(response_data)
         
@@ -546,670 +481,26 @@ def regulations_data(request):
 
 @api_view(['GET'])
 def instructions_data(request):
-    """
-    API endpoint для данных инструкций для студентов.
-    Возвращает пошаговые руководства по важным процедурам.
-    """
+    """API endpoint для инструкций студенческой жизни"""
     try:
-        response_data = {
-            "student_guides": [
-                {
-                    "id": 1,
-                    "title_ru": "Академический отпуск",
-                    "title_kg": "Академиялык эс алуу",
-                    "title_en": "Academic Leave",
-                    "description_ru": "Пошаговое руководство по оформлению академического отпуска",
-                    "description_kg": "Академиялык эс алууну рөмеддөө боюнча кадам-кадам жетекчилик",
-                    "description_en": "Step-by-step guide for academic leave registration",
-                    "icon": "CalendarDaysIcon",
-                    "estimated_time_ru": "2-3 дня",
-                    "estimated_time_kg": "2-3 күн",
-                    "estimated_time_en": "2-3 days",
-                    "max_duration_ru": "30 дней",
-                    "max_duration_kg": "30 күн",
-                    "max_duration_en": "30 days",
-                    "contact_info_ru": "Деканат: +996 312 123-456 доб. 105",
-                    "contact_info_kg": "Деканат: +996 312 123-456 кош. 105",
-                    "contact_info_en": "Dean's Office: +996 312 123-456 ext. 105",
-                    "requirements_ru": [
-                        "Заявление на имя ректора",
-                        "Справка о состоянии здоровья (при необходимости)",
-                        "Документы, подтверждающие причину отпуска",
-                        "Справка об отсутствии задолженностей"
-                    ],
-                    "requirements_kg": [
-                        "Ректордун атына арыз",
-                        "Ден соолук абалы жөнүндө справка (зарылчылыгына жараша)",
-                        "Эс алуунун себебин далилдөөчү документтер",
-                        "Карыз жок экендиги жөнүндө справка"
-                    ],
-                    "requirements_en": [
-                        "Application addressed to the rector",
-                        "Health certificate (if necessary)",
-                        "Documents confirming the reason for leave",
-                        "Certificate of no debts"
-                    ],
-                    "steps": [
-                        {
-                            "step_number": 1,
-                            "title_ru": "Подготовка документов",
-                            "title_kg": "Документтерди даярдоо",
-                            "title_en": "Document Preparation",
-                            "description_ru": "Соберите все необходимые документы для подачи заявления",
-                            "description_kg": "Арыз берүү үчүн бардык керектүү документтерди чогултуңуз",
-                            "description_en": "Collect all necessary documents for application submission",
-                            "timeframe_ru": "1-2 дня",
-                            "timeframe_kg": "1-2 күн",
-                            "timeframe_en": "1-2 days",
-                            "details_ru": [
-                                "Напишите заявление на имя ректора с указанием причины и сроков",
-                                "Получите справку от врача (если отпуск по состоянию здоровья)",
-                                "Соберите подтверждающие документы (справки, свидетельства)",
-                                "Получите справку об отсутствии академических задолженностей"
-                            ],
-                            "details_kg": [
-                                "Ректордун атына себеби жана мөөнөтү көрсөтүлгөн арыз жазыңыз",
-                                "Врачтан справка алыңыз (эгер ден соолук абалына байланыштуу болсо)",
-                                "Далилдөөчү документтерди чогултуңуз (справкалар, күбөлүктөр)",
-                                "Академиялык карыз жок экендиги жөнүндө справка алыңыз"
-                            ],
-                            "details_en": [
-                                "Write an application to the rector indicating the reason and timeframe",
-                                "Get a medical certificate (if leave is for health reasons)",
-                                "Collect supporting documents (certificates, testimonials)",
-                                "Get a certificate of no academic debts"
-                            ]
-                        },
-                        {
-                            "step_number": 2,
-                            "title_ru": "Подача документов",
-                            "title_kg": "Документтерди берүү",
-                            "title_en": "Document Submission",
-                            "description_ru": "Подайте документы в деканат своего факультета",
-                            "description_kg": "Документтерди өз факультетиңиздин деканатына бериңиз",
-                            "description_en": "Submit documents to your faculty's dean's office",
-                            "timeframe_ru": "30 минут",
-                            "timeframe_kg": "30 мүнөт",
-                            "timeframe_en": "30 minutes",
-                            "details_ru": [
-                                "Обратитесь в деканат в рабочие часы",
-                                "Передайте все документы секретарю деканата",
-                                "Получите расписку о приеме документов",
-                                "Уточните сроки рассмотрения заявления"
-                            ],
-                            "details_kg": [
-                                "Иш убагында деканатка кайрылыңыз",
-                                "Бардык документтерди деканаттын катчысына өткөрүңүз",
-                                "Документтерди кабыл алгандыгы жөнүндө расписка алыңыз",
-                                "Арызды карап чыгуу мөөнөттөрүн так билиңиз"
-                            ],
-                            "details_en": [
-                                "Contact the dean's office during working hours",
-                                "Submit all documents to the dean's secretary",
-                                "Get a receipt for document acceptance",
-                                "Clarify the application review timeframe"
-                            ]
-                        },
-                        {
-                            "step_number": 3,
-                            "title_ru": "Рассмотрение заявления",
-                            "title_kg": "Арызды карап чыгуу",
-                            "title_en": "Application Review",
-                            "description_ru": "Ожидание решения администрации университета",
-                            "description_kg": "Университеттин администрациясынын чечимин күтүү",
-                            "description_en": "Waiting for university administration decision",
-                            "timeframe_ru": "5-7 дней",
-                            "timeframe_kg": "5-7 күн",
-                            "timeframe_en": "5-7 days",
-                            "details_ru": [
-                                "Заявление рассматривается деканом факультета",
-                                "При необходимости может потребоваться дополнительная документация",
-                                "Решение утверждается ректором университета",
-                                "Вам сообщат о принятом решении"
-                            ],
-                            "details_kg": [
-                                "Арызды факультеттин деканы карайт",
-                                "Зарылчылыгына жараша кошумча документация талап кылынышы мүмкүн",
-                                "Чечимди университеттин ректору бекитет",
-                                "Силерге кабыл алынган чечим жөнүндө кабарлайт"
-                            ],
-                            "details_en": [
-                                "Application is reviewed by the faculty dean",
-                                "Additional documentation may be required if necessary",
-                                "Decision is approved by the university rector",
-                                "You will be notified of the decision made"
-                            ]
-                        },
-                        {
-                            "step_number": 4,
-                            "title_ru": "Получение приказа",
-                            "title_kg": "Буйруктуу алуу",
-                            "title_en": "Receiving the Order",
-                            "description_ru": "Получение официального приказа об академическом отпуске",
-                            "description_kg": "Академиялык эс алуу жөнүндө расмий буйруктуу алуу",
-                            "description_en": "Receiving official order for academic leave",
-                            "timeframe_ru": "1 день",
-                            "timeframe_kg": "1 күн",
-                            "timeframe_en": "1 day",
-                            "details_ru": [
-                                "Явитесь в деканат в указанное время",
-                                "Получите копию приказа об академическом отпуске",
-                                "Ознакомьтесь с условиями и сроками отпуска",
-                                "Сохраните документ для дальнейшего восстановления"
-                            ],
-                            "details_kg": [
-                                "Көрсөтүлгөн убакытта деканатка келиңиз",
-                                "Академиялык эс алуу жөнүндө буйруктун көчүрмөсүн алыңыз",
-                                "Эс алуунун шарттары жана мөөнөттөрү менен таанышыңыз",
-                                "Кийинки калыбына келтирүү үчүн документти сактаңыз"
-                            ],
-                            "details_en": [
-                                "Come to the dean's office at the specified time",
-                                "Get a copy of the academic leave order",
-                                "Familiarize yourself with leave conditions and terms",
-                                "Keep the document for future restoration"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "id": 2,
-                    "title_ru": "Перевод на другую специальность",
-                    "title_kg": "Башка адистикке которуу",
-                    "title_en": "Transfer to Another Specialty",
-                    "description_ru": "Руководство по переводу на другую образовательную программу",
-                    "description_kg": "Башка билим берүү программасына которуу боюнча жетекчилик",
-                    "description_en": "Guide for transferring to another educational program",
-                    "icon": "UserGroupIcon",
-                    "estimated_time_ru": "1-2 недели",
-                    "estimated_time_kg": "1-2 жума",
-                    "estimated_time_en": "1-2 weeks",
-                    "max_duration_ru": "До начала семестра",
-                    "max_duration_kg": "Семестр башталганга чейин",
-                    "max_duration_en": "Before the semester starts",
-                    "contact_info_ru": "Учебная часть: +996 312 123-456 доб. 102",
-                    "contact_info_kg": "Окуу бөлүмү: +996 312 123-456 кош. 102",
-                    "contact_info_en": "Academic Office: +996 312 123-456 ext. 102",
-                    "requirements_ru": [
-                        "Заявление о переводе",
-                        "Академическая справка",
-                        "Выписка из зачетной книжки",
-                        "Согласие принимающей кафедры"
-                    ],
-                    "requirements_kg": [
-                        "Которуу жөнүндө арыз",
-                        "Академиялык справка",
-                        "Белгилер китебинен көчүрмө",
-                        "Кабыл алуучу кафедранын макулдугу"
-                    ],
-                    "requirements_en": [
-                        "Transfer application",
-                        "Academic transcript",
-                        "Excerpt from grade book",
-                        "Consent from receiving department"
-                    ],
-                    "steps": [
-                        {
-                            "step_number": 1,
-                            "title_ru": "Консультация с кафедрой",
-                            "title_kg": "Кафедра менен консультация",
-                            "title_en": "Department Consultation",
-                            "description_ru": "Получите консультацию о возможности перевода",
-                            "description_kg": "Которуу мүмкүнчүлүгү жөнүндө консультация алыңыз",
-                            "description_en": "Get consultation about transfer possibility",
-                            "timeframe_ru": "1-2 дня",
-                            "timeframe_kg": "1-2 күн",
-                            "timeframe_en": "1-2 days",
-                            "details_ru": [
-                                "Обратитесь на кафедру желаемой специальности",
-                                "Уточните наличие свободных мест",
-                                "Получите информацию о разнице в учебных планах",
-                                "Узнайте о дополнительных требованиях"
-                            ],
-                            "details_kg": [
-                                "Каалаган адистиктин кафедрасына кайрылыңыз",
-                                "Бош орундардын барын так билиңиз",
-                                "Окуу пландарынын айырмасы жөнүндө маалымат алыңыз",
-                                "Кошумча талаптар жөнүндө билиңиз"
-                            ],
-                            "details_en": [
-                                "Contact the department of desired specialty",
-                                "Check availability of vacant places",
-                                "Get information about curriculum differences",
-                                "Learn about additional requirements"
-                            ]
-                        },
-                        {
-                            "step_number": 2,
-                            "title_ru": "Подготовка документов",
-                            "title_kg": "Документтерди даярдоо",
-                            "title_en": "Document Preparation",
-                            "description_ru": "Соберите все необходимые документы",
-                            "description_kg": "Бардык керектүү документтерди чогултуңуз",
-                            "description_en": "Collect all necessary documents",
-                            "timeframe_ru": "2-3 дня",
-                            "timeframe_kg": "2-3 күн",
-                            "timeframe_en": "2-3 days",
-                            "details_ru": [
-                                "Напишите заявление о переводе",
-                                "Получите академическую справку в деканате",
-                                "Сделайте выписку из зачетной книжки",
-                                "Получите согласие от принимающей кафедры"
-                            ],
-                            "details_kg": [
-                                "Которуу жөнүндө арыз жазыңыз",
-                                "Деканаттан академиялык справка алыңыз",
-                                "Белгилер китебинен көчүрмө жасаңыз",
-                                "Кабыл алуучу кафедрадан макулдук алыңыз"
-                            ],
-                            "details_en": [
-                                "Write a transfer application",
-                                "Get academic transcript from dean's office",
-                                "Make excerpt from grade book",
-                                "Get consent from receiving department"
-                            ]
-                        },
-                        {
-                            "step_number": 3,
-                            "title_ru": "Сдача академической разности",
-                            "title_kg": "Академиялык айырманы тапшыруу",
-                            "title_en": "Academic Difference Examination",
-                            "description_ru": "Ликвидация академической задолженности",
-                            "description_kg": "Академиялык карызды жоюу",
-                            "description_en": "Academic debt elimination",
-                            "timeframe_ru": "1-4 недели",
-                            "timeframe_kg": "1-4 жума",
-                            "timeframe_en": "1-4 weeks",
-                            "details_ru": [
-                                "Сравните учебные планы специальностей",
-                                "Определите перечень дополнительных дисциплин",
-                                "Сдайте экзамены/зачеты по недостающим предметам",
-                                "Получите справку о ликвидации разности"
-                            ],
-                            "details_kg": [
-                                "Адистиктердин окуу пландарын салыштырыңыз",
-                                "Кошумча дисциплиналардын тизмесин аныктаңыз",
-                                "Жетишпеген сабактар боюнча экзамен/зачет тапшырыңыз",
-                                "Айырманы жок кылуу жөнүндө справка алыңыз"
-                            ],
-                            "details_en": [
-                                "Compare specialty curricula",
-                                "Determine list of additional disciplines",
-                                "Pass exams/credits for missing subjects",
-                                "Get certificate of difference elimination"
-                            ]
-                        },
-                        {
-                            "step_number": 4,
-                            "title_ru": "Оформление перевода",
-                            "title_kg": "Которууну рөмеддөө",
-                            "title_en": "Transfer Formalization",
-                            "description_ru": "Официальное оформление перевода",
-                            "description_kg": "Которуунун расмий рөмеддөлүшү",
-                            "description_en": "Official transfer formalization",
-                            "timeframe_ru": "3-5 дней",
-                            "timeframe_kg": "3-5 күн",
-                            "timeframe_en": "3-5 days",
-                            "details_ru": [
-                                "Подайте все документы в учебную часть",
-                                "Дождитесь издания приказа о переводе",
-                                "Получите новую зачетную книжку",
-                                "Ознакомьтесь с новым расписанием"
-                            ],
-                            "details_kg": [
-                                "Бардык документтерди окуу бөлүмүнө бериңиз",
-                                "Которуу жөнүндө буйруктун чыгарылышын күтүңүз",
-                                "Жаңы белгилер китебин алыңыз",
-                                "Жаңы сабак расписаниясы менен таанышыңыз"
-                            ],
-                            "details_en": [
-                                "Submit all documents to academic office",
-                                "Wait for transfer order issuance",
-                                "Get new grade book",
-                                "Familiarize with new schedule"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "id": 3,
-                    "title_ru": "Восстановление после отчисления",
-                    "title_kg": "Чыгарылгандан кийин калыбына келтирүү",
-                    "title_en": "Restoration After Expulsion",
-                    "description_ru": "Процедура восстановления в университете после отчисления",
-                    "description_kg": "Чыгарылгандан кийин университетке калыбына келтирүү процедурасы",
-                    "description_en": "Procedure for restoration at university after expulsion",
-                    "icon": "ClipboardDocumentListIcon",
-                    "estimated_time_ru": "2-3 недели",
-                    "estimated_time_kg": "2-3 жума",
-                    "estimated_time_en": "2-3 weeks",
-                    "max_duration_ru": "До начала семестра",
-                    "max_duration_kg": "Семестр башталганга чейин",
-                    "max_duration_en": "Before the semester starts",
-                    "contact_info_ru": "Приемная комиссия: +996 312 123-456 доб. 101",
-                    "contact_info_kg": "Кабыл алуу комиссиясы: +996 312 123-456 кош. 101",
-                    "contact_info_en": "Admissions Committee: +996 312 123-456 ext. 101",
-                    "requirements_ru": [
-                        "Заявление о восстановлении",
-                        "Копия приказа об отчислении",
-                        "Академическая справка",
-                        "Документ об образовании"
-                    ],
-                    "requirements_kg": [
-                        "Калыбына келтирүү жөнүндө арыз",
-                        "Чыгаруу жөнүндө буйруктун көчүрмөсү",
-                        "Академиялык справка",
-                        "Билим жөнүндө документ"
-                    ],
-                    "requirements_en": [
-                        "Restoration application",
-                        "Copy of expulsion order",
-                        "Academic transcript",
-                        "Education document"
-                    ],
-                    "steps": [
-                        {
-                            "step_number": 1,
-                            "title_ru": "Подача заявления",
-                            "title_kg": "Арыз берүү",
-                            "title_en": "Application Submission",
-                            "description_ru": "Подача документов для восстановления",
-                            "description_kg": "Калыбына келтирүү үчүн документтерди берүү",
-                            "description_en": "Document submission for restoration",
-                            "timeframe_ru": "1 день",
-                            "timeframe_kg": "1 күн",
-                            "timeframe_en": "1 day",
-                            "details_ru": [
-                                "Напишите заявление на имя ректора",
-                                "Приложите копию приказа об отчислении",
-                                "Предоставьте академическую справку",
-                                "Приложите документ об образовании"
-                            ],
-                            "details_kg": [
-                                "Ректордун атына арыз жазыңыз",
-                                "Чыгаруу жөнүндө буйруктун көчүрмөсүн тиркеңиз",
-                                "Академиялык справканы бериңиз",
-                                "Билим жөнүндө документти тиркеңиз"
-                            ],
-                            "details_en": [
-                                "Write an application addressed to the rector",
-                                "Attach a copy of the expulsion order",
-                                "Provide academic transcript",
-                                "Attach education document"
-                            ]
-                        },
-                        {
-                            "step_number": 2,
-                            "title_ru": "Рассмотрение заявления",
-                            "title_kg": "Арызды карап чыгуу",
-                            "title_en": "Application Review",
-                            "description_ru": "Проверка документов и принятие решения",
-                            "description_kg": "Документтерди текшерүү жана чечим чыгаруу",
-                            "description_en": "Document verification and decision making",
-                            "timeframe_ru": "7-10 дней",
-                            "timeframe_kg": "7-10 күн",
-                            "timeframe_en": "7-10 days",
-                            "details_ru": [
-                                "Документы проверяются приемной комиссией",
-                                "Анализируется академическая успеваемость",
-                                "Учитывается причина отчисления",
-                                "Принимается решение о возможности восстановления"
-                            ],
-                            "details_kg": [
-                                "Документтерди кабыл алуу комиссиясы текшерет",
-                                "Академиялык жетишкендик талданат",
-                                "Чыгаруунун себеби эсепке алынат",
-                                "Калыбына келтирүү мүмкүнчүлүгү жөнүндө чечим чыгарылат"
-                            ],
-                            "details_en": [
-                                "Documents are reviewed by admissions committee",
-                                "Academic performance is analyzed",
-                                "Expulsion reason is considered",
-                                "Decision about restoration possibility is made"
-                            ]
-                        },
-                        {
-                            "step_number": 3,
-                            "title_ru": "Ликвидация задолженностей",
-                            "title_kg": "Карыздарды жоюу",
-                            "title_en": "Debt Elimination",
-                            "description_ru": "Сдача академических задолженностей",
-                            "description_kg": "Академиялык карыздарды тапшыруу",
-                            "description_en": "Academic debt settlement",
-                            "timeframe_ru": "1-2 недели",
-                            "timeframe_kg": "1-2 жума",
-                            "timeframe_en": "1-2 weeks",
-                            "details_ru": [
-                                "Получите список задолженностей",
-                                "Согласуйте график сдачи с преподавателями",
-                                "Сдайте все академические задолженности",
-                                "Получите справку о ликвидации задолженностей"
-                            ],
-                            "details_kg": [
-                                "Карыздардын тизмесин алыңыз",
-                                "Мугалимдер менен тапшыруу графигин келишиңиз",
-                                "Бардык академиялык карыздарды тапшырыңыз",
-                                "Карыздарды жок кылуу жөнүндө справка алыңыз"
-                            ],
-                            "details_en": [
-                                "Get list of debts",
-                                "Coordinate submission schedule with teachers",
-                                "Submit all academic debts",
-                                "Get certificate of debt elimination"
-                            ]
-                        },
-                        {
-                            "step_number": 4,
-                            "title_ru": "Зачисление",
-                            "title_kg": "Кабыл алуу",
-                            "title_en": "Enrollment",
-                            "description_ru": "Официальное восстановление в университете",
-                            "description_kg": "Университетке расмий калыбына келтирүү",
-                            "description_en": "Official restoration at university",
-                            "timeframe_ru": "2-3 дня",
-                            "timeframe_kg": "2-3 күн",
-                            "timeframe_en": "2-3 days",
-                            "details_ru": [
-                                "Издается приказ о восстановлении",
-                                "Выдается новая зачетная книжка",
-                                "Оформляется студенческий билет",
-                                "Вы зачисляетесь в соответствующую группу"
-                            ],
-                            "details_kg": [
-                                "Калыбына келтирүү жөнүндө буйрук чыгарылат",
-                                "Жаңы белгилер китеби берилет",
-                                "Студенттик билет рөмеддөлөт",
-                                "Сиз тиешелүү топко кабыл алынасыз"
-                            ],
-                            "details_en": [
-                                "Restoration order is issued",
-                                "New grade book is issued",
-                                "Student card is processed",
-                                "You are enrolled in appropriate group"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "id": 4,
-                    "title_ru": "Получение справок и документов",
-                    "title_kg": "Маалымат каттары жана документтерди алуу",
-                    "title_en": "Obtaining Certificates and Documents",
-                    "description_ru": "Порядок получения различных справок и документов",
-                    "description_kg": "Ар кандай маалымат каттарын жана документтерди алуу тартиби",
-                    "description_en": "Procedure for obtaining various certificates and documents",
-                    "icon": "DocumentTextIcon",
-                    "estimated_time_ru": "1-3 дня",
-                    "estimated_time_kg": "1-3 күн",
-                    "estimated_time_en": "1-3 days",
-                    "max_duration_ru": "Зависит от типа документа",
-                    "max_duration_kg": "Документтин түрүнө жараша",
-                    "max_duration_en": "Depends on document type",
-                    "contact_info_ru": "Канцелярия: +996 312 123-456 доб. 103",
-                    "contact_info_kg": "Канцелярия: +996 312 123-456 кош. 103",
-                    "contact_info_en": "Secretariat: +996 312 123-456 ext. 103",
-                    "requirements_ru": [
-                        "Заявление с указанием типа справки",
-                        "Студенческий билет",
-                        "Документ, удостоверяющий личность",
-                        "Оплата государственной пошлины (при необходимости)"
-                    ],
-                    "requirements_kg": [
-                        "Маалымат каттын түрүн көрсөткөн арыз",
-                        "Студенттик билет",
-                        "Жеке инсанды тастыктоочу документ",
-                        "Мамлекеттик баж төлөө (зарылчылыгына жараша)"
-                    ],
-                    "requirements_en": [
-                        "Application indicating certificate type",
-                        "Student card",
-                        "Identity document",
-                        "State fee payment (if required)"
-                    ],
-                    "steps": [
-                        {
-                            "step_number": 1,
-                            "title_ru": "Определение типа документа",
-                            "title_kg": "Документтин түрүн аныктоо",
-                            "title_en": "Document Type Determination",
-                            "description_ru": "Выберите нужный тип справки или документа",
-                            "description_kg": "Керектүү маалымат каттын же документтин түрүн тандаңыз",
-                            "description_en": "Choose the required certificate or document type",
-                            "timeframe_ru": "15 минут",
-                            "timeframe_kg": "15 мүнөт",
-                            "timeframe_en": "15 minutes",
-                            "details_ru": [
-                                "Справка об обучении",
-                                "Справка о периоде обучения",
-                                "Академическая справка",
-                                "Справка для военкомата",
-                                "Справка для получения стипендии",
-                                "Дубликат студенческого билета"
-                            ],
-                            "details_kg": [
-                                "Окуу жөнүндө маалымат кат",
-                                "Окуу мезгили жөнүндө маалымат кат",
-                                "Академиялык маалымат кат",
-                                "Аскердик комиссариат үчүн маалымат кат",
-                                "Стипендия алуу үчүн маалымат кат",
-                                "Студенттик билеттин дубликаты"
-                            ],
-                            "details_en": [
-                                "Study certificate",
-                                "Study period certificate",
-                                "Academic transcript",
-                                "Certificate for military commissariat",
-                                "Certificate for scholarship",
-                                "Student card duplicate"
-                            ]
-                        },
-                        {
-                            "step_number": 2,
-                            "title_ru": "Подача заявления",
-                            "title_kg": "Арыз берүү",
-                            "title_en": "Application Submission",
-                            "description_ru": "Оформление заявления на получение документа",
-                            "description_kg": "Документ алуу үчүн арыз рөмеддөө",
-                            "description_en": "Application processing for document receipt",
-                            "timeframe_ru": "30 минут",
-                            "timeframe_kg": "30 мүнөт",
-                            "timeframe_en": "30 minutes",
-                            "details_ru": [
-                                "Заполните заявление с указанием типа справки",
-                                "Укажите цель получения документа",
-                                "Предъявите студенческий билет",
-                                "При необходимости оплатите госпошлину"
-                            ],
-                            "details_kg": [
-                                "Маалымат каттын түрүн көрсөтүп арызды толтуруңуз",
-                                "Документти алуу максатын көрсөтүңүз",
-                                "Студенттик билетти көрсөтүңүз",
-                                "Зарылчылыгына жараша мамлекеттик бажды төлөңүз"
-                            ],
-                            "details_en": [
-                                "Fill out application indicating certificate type",
-                                "Specify purpose of document receipt",
-                                "Present student card",
-                                "Pay state fee if necessary"
-                            ]
-                        },
-                        {
-                            "step_number": 3,
-                            "title_ru": "Ожидание готовности",
-                            "title_kg": "Даярдыкты күтүү",
-                            "title_en": "Waiting for Readiness",
-                            "description_ru": "Время обработки заявления",
-                            "description_kg": "Арызды иштеп чыгуу убактысы",
-                            "description_en": "Application processing time",
-                            "timeframe_ru": "1-3 дня",
-                            "timeframe_kg": "1-3 күн",
-                            "timeframe_en": "1-3 days",
-                            "details_ru": [
-                                "Стандартные справки готовятся в течение 1-2 дней",
-                                "Академические справки - до 3 дней",
-                                "Дубликаты документов - до 5 дней",
-                                "Вам сообщат о готовности по телефону"
-                            ],
-                            "details_kg": [
-                                "Стандарттык маалымат каттар 1-2 күндүн ичинде даярдалат",
-                                "Академиялык маалымат каттар - 3 күнгө чейин",
-                                "Документтердин дубликаттары - 5 күнгө чейин",
-                                "Даярдыгы жөнүндө телефон аркылуу кабарлайт"
-                            ],
-                            "details_en": [
-                                "Standard certificates are prepared within 1-2 days",
-                                "Academic transcripts - up to 3 days",
-                                "Document duplicates - up to 5 days",
-                                "You will be notified of readiness by phone"
-                            ]
-                        },
-                        {
-                            "step_number": 4,
-                            "title_ru": "Получение документа",
-                            "title_kg": "Документти алуу",
-                            "title_en": "Document Receipt",
-                            "description_ru": "Получение готовой справки или документа",
-                            "description_kg": "Даяр маалымат катты же документти алуу",
-                            "description_en": "Receiving ready certificate or document",
-                            "timeframe_ru": "15 минут",
-                            "timeframe_kg": "15 мүнөт",
-                            "timeframe_en": "15 minutes",
-                            "details_ru": [
-                                "Явитесь в указанное время",
-                                "Предъявите документ, удостоверяющий личность",
-                                "Получите справку с печатью и подписью",
-                                "Проверьте правильность данных в документе"
-                            ],
-                            "details_kg": [
-                                "Көрсөтүлгөн убакытта келиңиз",
-                                "Жеке инсанды тастыктоочу документти көрсөтүңүз",
-                                "Мөөр жана кол коюлган маалымат катты алыңыз",
-                                "Документтеги маалыматтардын туурасын текшериңиз"
-                            ],
-                            "details_en": [
-                                "Come at the specified time",
-                                "Present identity document",
-                                "Receive certificate with stamp and signature",
-                                "Check correctness of data in document"
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
+        # Получаем все активные инструкции
+        guides = StudentGuide.objects.filter(is_active=True).order_by('order')
+        serializer = StudentGuideSerializer(guides, many=True, context={'request': request})
         
-        # Адаптируем данные под структуру, ожидаемую фронтендом
-        for guide in response_data["student_guides"]:
-            guide["title"] = guide["title_ru"]  # Добавляем для совместимости
-            guide["description"] = guide["description_ru"]  # Добавляем для совместимости
-        
-        return Response(response_data)
+        return Response({
+            'student_guides': serializer.data,
+            'success': True,
+            'message': 'Инструкции успешно загружены'
+        })
         
     except Exception as e:
-        return Response(
-            {'error': f'Ошибка загрузки данных: {str(e)}'}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        # В случае ошибки возвращаем дефолтные данные
+        return Response({
+            'student_guides': [],
+            'error': str(e),
+            'success': False,
+            'message': 'Ошибка загрузки инструкций'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class StudentAppealViewSet(viewsets.ModelViewSet):
@@ -1408,3 +699,57 @@ def life_overview_data(request):
             {'error': f'Ошибка загрузки данных обзора: {str(e)}'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(['GET'])
+def download_file(request, file_id):
+    """
+    Безопасное скачивание файлов с правильной UTF-8 кодировкой
+    """
+    try:
+        # Ищем файл среди шаблонов отчетов
+        template = ReportTemplate.objects.get(id=file_id)
+        
+        if not template.file:
+            raise Http404("Файл не найден")
+        
+        file_path = template.file.path
+        
+        if not os.path.exists(file_path):
+            raise Http404("Файл не существует на сервере")
+        
+        # Определяем MIME тип
+        content_type, encoding = mimetypes.guess_type(file_path)
+        if content_type is None:
+            content_type = 'application/octet-stream'
+        
+        # Читаем файл с правильной кодировкой
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+            
+            # Создаем response с UTF-8 кодировкой
+            response = HttpResponse(file_content.encode('utf-8'), content_type=f'{content_type}; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{force_str(template.name_ru)}.txt'
+            return response
+            
+        except UnicodeDecodeError:
+            # Если файл не UTF-8, пробуем другие кодировки
+            for encoding in ['cp1251', 'iso-8859-1']:
+                try:
+                    with open(file_path, 'r', encoding=encoding) as f:
+                        file_content = f.read()
+                    
+                    response = HttpResponse(file_content.encode('utf-8'), content_type=f'{content_type}; charset=utf-8')
+                    response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{force_str(template.name_ru)}.txt'
+                    return response
+                except UnicodeDecodeError:
+                    continue
+            
+            # Если ни одна кодировка не подошла, возвращаем как бинарный файл
+            return FileResponse(open(file_path, 'rb'), content_type=content_type, as_attachment=True)
+        
+    except ReportTemplate.DoesNotExist:
+        raise Http404("Шаблон не найден")
+    except Exception as e:
+        return HttpResponse(f'Ошибка при скачивании файла: {str(e)}', status=500)

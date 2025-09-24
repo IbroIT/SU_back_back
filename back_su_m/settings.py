@@ -45,9 +45,16 @@ INSTALLED_APPS = [
     'admissions',
     'hsm',
     'infrastructure',
+<<<<<<< HEAD
     'documents',
     'student_life',
     'media_coverage',
+=======
+    'documents',  # Добавляем новое приложение
+    'student_life',  # Приложение студенческой жизни
+    'media_coverage',  # Приложение медиа-покрытия
+    'about_section',  # Секция "О нас" и партнеры
+>>>>>>> b5ff9edf4c2f09ace52a6d2ed580f79f6a45329c
 ]
 
 MIDDLEWARE = [
@@ -189,5 +196,27 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@salymbekov.edu.kg')
 
+<<<<<<< HEAD
 ADMISSIONS_EMAIL_TO = config('ADMISSIONS_EMAIL_TO', default='adilhansatymkulov40@gmail.com')
 STUDENT_APPEALS_EMAIL_TO = config('STUDENT_APPEALS_EMAIL_TO', default='adilhansatymkulov40@gmail.com')
+=======
+# Email configuration (development defaults). Override via environment in production.
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '0') or 0)
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@salymbekov.edu.kg')
+
+# Email addresses for different purposes
+ADMISSIONS_EMAIL_TO = os.environ.get('ADMISSIONS_EMAIL_TO', 'adilhansatymkulov40@gmail.com')
+STUDENT_APPEALS_EMAIL_TO = os.environ.get('STUDENT_APPEALS_EMAIL_TO', 'adilhansatymkulov40@gmail.com')
+
+# File handling settings
+DEFAULT_CHARSET = 'utf-8'
+FILE_CHARSET = 'utf-8'
+
+# Response settings for proper UTF-8 handling
+DEFAULT_CONTENT_TYPE = 'text/html; charset=utf-8'
+>>>>>>> b5ff9edf4c2f09ace52a6d2ed580f79f6a45329c

@@ -174,7 +174,12 @@ class BuildingFacility(models.Model):
     name_en = models.CharField(max_length=200, verbose_name=_("Название помещения (англ)"))
     
     count = models.PositiveIntegerField(verbose_name=_("Количество"))
-    capacity = models.CharField(max_length=100, verbose_name=_("Вместимость"))
+    capacity_ru = models.CharField(max_length=100, verbose_name=_("Вместимость (рус)"))
+    capacity_kg = models.CharField(max_length=100, verbose_name=_("Вместимость (кырг)"))
+    capacity_en = models.CharField(max_length=100, verbose_name=_("Вместимость (англ)"))
+    
+    # Для совместимости со старыми данными
+    capacity = models.CharField(max_length=100, verbose_name=_("Вместимость (устар.)"), blank=True, null=True)
     
     order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
 

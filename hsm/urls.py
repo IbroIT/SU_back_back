@@ -10,5 +10,5 @@ router.register(r'faculty', FacultyViewSet, basename='hsm-faculty')
 router.register(r'accreditations', AccreditationViewSet, basename='hsm-accreditations')
 
 urlpatterns = [
-    path('api/hsm/', include(router.urls)),
+    path('hsm/', include(router.urls)),
 ]

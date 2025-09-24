@@ -24,15 +24,20 @@ class OrganizationSpecializationInline(admin.TabularInline):
 
 @admin.register(PartnerOrganization)
 class PartnerOrganizationAdmin(admin.ModelAdmin):
-    list_display = ['name_ru', 'type', 'location', 'contact_person', 'is_active']
+    list_display = ['name_ru', 'type', 'location', 'contact_person', 'has_logo', 'is_active']
     list_filter = ['type', 'is_active', 'location']
     search_fields = ['name_ru', 'name_kg', 'name_en', 'contact_person', 'location']
     inlines = [OrganizationSpecializationInline]
     ordering = ['name_ru']
     
+    def has_logo(self, obj):
+        return bool(obj.logo)
+    has_logo.boolean = True
+    has_logo.short_description = 'Логотип'
+    
     fieldsets = (
         ('Основная информация', {
-            'fields': ['type', 'location', 'contact_person', 'phone', 'email', 'website', 'is_active']
+            'fields': ['type', 'location', 'contact_person', 'phone', 'email', 'website', 'logo', 'is_active']
         }),
         ('Русский', {
             'fields': ['name_ru', 'description_ru'],

@@ -4,7 +4,7 @@ from .views import (
     PartnerOrganizationViewSet, StudentAppealViewSet,
     PhotoAlbumViewSet, PhotoViewSet, VideoContentViewSet, StudentLifeStatisticViewSet,
     internships_data, academic_mobility_data, regulations_data, instructions_data,
-    gallery_data, life_overview_data
+    gallery_data, life_overview_data, download_file
 )
 
 router = DefaultRouter()
@@ -25,4 +25,6 @@ urlpatterns = [
     # Новые endpoints для галереи и обзора студенческой жизни
     path('api/data/gallery_data/', gallery_data, name='gallery_data'),
     path('api/data/life_overview_data/', life_overview_data, name='life_overview_data'),
+    # Endpoint для скачивания файлов
+    path('api/download/<int:file_id>/', download_file, name='download_file'),
 ]

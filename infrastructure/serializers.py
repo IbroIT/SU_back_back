@@ -85,19 +85,28 @@ class LaboratorySerializer(serializers.ModelSerializer):
 class BuildingFacilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = BuildingFacility
-        fields = ['id', 'name_ru', 'name_kg', 'name_en', 'count', 'capacity', 'order']
+        fields = ['id', 'name_ru', 'name_kg', 'name_en', 'count', 'capacity_ru', 'capacity_kg', 'capacity_en', 'capacity', 'order']
 
 
 class BuildingPhotoSerializer(serializers.ModelSerializer):
-    photo_url = serializers.SerializerMethodField()
+    url = serializers.SerializerMethodField()  # Изменено с photo_url на url для фронтенда
+    photo_url = serializers.SerializerMethodField()  # Оставляем для обратной совместимости
     type_display = serializers.CharField(source='get_type_display', read_only=True)
 
     class Meta:
         model = BuildingPhoto
         fields = [
-            'id', 'photo_url', 'type', 'type_display',
+            'id', 'url', 'photo_url', 'type', 'type_display',
             'title_ru', 'title_kg', 'title_en', 'order'
         ]
+
+    def get_url(self, obj):
+        if obj.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.photo.url)
+            return obj.photo.url
+        return None
 
     def get_photo_url(self, obj):
         if obj.photo:
@@ -111,6 +120,8 @@ class BuildingPhotoSerializer(serializers.ModelSerializer):
 class AcademicBuildingSerializer(serializers.ModelSerializer):
     facilities = BuildingFacilitySerializer(many=True, read_only=True)
     photos = BuildingPhotoSerializer(many=True, read_only=True)
+    photo_url = serializers.SerializerMethodField()  # Главное фото для совместимости с фронтендом
+    facade_photo = serializers.SerializerMethodField()  # Фото фасада
 
     class Meta:
         model = AcademicBuilding
@@ -120,8 +131,36 @@ class AcademicBuildingSerializer(serializers.ModelSerializer):
             'address_ru', 'address_kg', 'address_en',
             'floors', 'latitude', 'longitude',
             'is_active', 'order', 'facilities', 'photos',
+            'photo_url', 'facade_photo',
             'created_at', 'updated_at'
         ]
+
+    def get_photo_url(self, obj):
+        # Сначала ищем фасад, потом первое доступное фото
+        facade_photo = obj.photos.filter(type='facade').first()
+        if facade_photo and facade_photo.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(facade_photo.photo.url)
+            return facade_photo.photo.url
+        
+        # Если нет фасада, берем первое фото
+        first_photo = obj.photos.first()
+        if first_photo and first_photo.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(first_photo.photo.url)
+            return first_photo.photo.url
+        return None
+
+    def get_facade_photo(self, obj):
+        facade_photo = obj.photos.filter(type='facade').first()
+        if facade_photo and facade_photo.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(facade_photo.photo.url)
+            return facade_photo.photo.url
+        return None
 
 
 class DormitoryRoomSerializer(serializers.ModelSerializer):
@@ -144,15 +183,24 @@ class DormitoryFacilitySerializer(serializers.ModelSerializer):
 
 
 class DormitoryPhotoSerializer(serializers.ModelSerializer):
-    photo_url = serializers.SerializerMethodField()
+    url = serializers.SerializerMethodField()  # Изменено с photo_url на url для фронтенда
+    photo_url = serializers.SerializerMethodField()  # Оставляем для обратной совместимости
     type_display = serializers.CharField(source='get_type_display', read_only=True)
 
     class Meta:
         model = DormitoryPhoto
         fields = [
-            'id', 'photo_url', 'type', 'type_display',
+            'id', 'url', 'photo_url', 'type', 'type_display',
             'title_ru', 'title_kg', 'title_en', 'order'
         ]
+
+    def get_url(self, obj):
+        if obj.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.photo.url)
+            return obj.photo.url
+        return None
 
     def get_photo_url(self, obj):
         if obj.photo:
@@ -168,6 +216,8 @@ class DormitorySerializer(serializers.ModelSerializer):
     facilities = DormitoryFacilitySerializer(many=True, read_only=True)
     photos = DormitoryPhotoSerializer(many=True, read_only=True)
     type_display = serializers.CharField(source='get_type_display', read_only=True)
+    main_photo = serializers.SerializerMethodField()  # Главное фото для совместимости
+    exterior_photo = serializers.SerializerMethodField()  # Фото внешнего вида
 
     class Meta:
         model = Dormitory
@@ -177,9 +227,36 @@ class DormitorySerializer(serializers.ModelSerializer):
             'description_ru', 'description_kg', 'description_en',
             'address_ru', 'address_kg', 'address_en',
             'capacity', 'available', 'is_active', 'order',
-            'rooms', 'facilities', 'photos',
+            'rooms', 'facilities', 'photos', 'main_photo', 'exterior_photo',
             'created_at', 'updated_at'
         ]
+
+    def get_main_photo(self, obj):
+        # Сначала ищем exterior, потом первое доступное фото
+        exterior_photo = obj.photos.filter(type='exterior').first()
+        if exterior_photo and exterior_photo.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(exterior_photo.photo.url)
+            return exterior_photo.photo.url
+        
+        # Если нет exterior, берем первое фото
+        first_photo = obj.photos.first()
+        if first_photo and first_photo.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(first_photo.photo.url)
+            return first_photo.photo.url
+        return None
+
+    def get_exterior_photo(self, obj):
+        exterior_photo = obj.photos.filter(type='exterior').first()
+        if exterior_photo and exterior_photo.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(exterior_photo.photo.url)
+            return exterior_photo.photo.url
+        return None
 
 
 # Simplified serializers for list views

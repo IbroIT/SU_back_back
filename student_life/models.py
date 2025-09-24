@@ -27,6 +27,13 @@ class PartnerOrganization(models.Model):
     phone = models.CharField(_('Телефон'), max_length=50)
     email = models.EmailField(_('Email'))
     website = models.URLField(_('Веб-сайт'), blank=True, null=True)
+    logo = models.ImageField(
+        upload_to='partner_organizations/',
+        verbose_name=_('Логотип'),
+        blank=True,
+        null=True,
+        help_text='Логотип или фото организации-партнера'
+    )
     is_active = models.BooleanField(_('Активна'), default=True)
     created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Дата обновления'), auto_now=True)
@@ -456,6 +463,23 @@ class DownloadableDocument(models.Model):
 
 class StudentGuide(models.Model):
     """Инструкции для студентов"""
+    CATEGORY_CHOICES = [
+        ('academic', _('Академические вопросы')),
+        ('administrative', _('Административные вопросы')),
+        ('documents', _('Документы и справки')),
+        ('financial', _('Финансовые вопросы')),
+        ('appeals', _('Заявления и обращения')),
+    ]
+    
+    ICON_CHOICES = [
+        ('CalendarDaysIcon', 'Календарь'),
+        ('UserGroupIcon', 'Группа пользователей'),
+        ('ClipboardDocumentListIcon', 'Список документов'),
+        ('DocumentTextIcon', 'Документ'),
+        ('AcademicCapIcon', 'Академическая шапочка'),
+        ('BuildingOfficeIcon', 'Офисное здание'),
+    ]
+    
     # Мультиязычные поля
     title_ru = models.CharField('Заголовок (русский)', max_length=255)
     title_kg = models.CharField('Заголовок (кыргызский)', max_length=255)
@@ -465,7 +489,21 @@ class StudentGuide(models.Model):
     description_kg = models.TextField('Описание (кыргызский)', blank=True)
     description_en = models.TextField('Описание (английский)', blank=True)
     
+    estimated_time_ru = models.CharField('Ориентировочное время (русский)', max_length=100, blank=True)
+    estimated_time_kg = models.CharField('Ориентировочное время (кыргызский)', max_length=100, blank=True)
+    estimated_time_en = models.CharField('Ориентировочное время (английский)', max_length=100, blank=True)
+    
+    max_duration_ru = models.CharField('Максимальный срок (русский)', max_length=100, blank=True)
+    max_duration_kg = models.CharField('Максимальный срок (кыргызский)', max_length=100, blank=True)
+    max_duration_en = models.CharField('Максимальный срок (английский)', max_length=100, blank=True)
+    
+    contact_info_ru = models.TextField('Контактная информация (русский)', blank=True)
+    contact_info_kg = models.TextField('Контактная информация (кыргызский)', blank=True)
+    contact_info_en = models.TextField('Контактная информация (английский)', blank=True)
+    
     # Немультиязычные поля
+    category = models.CharField('Категория', max_length=20, choices=CATEGORY_CHOICES, default='academic')
+    icon = models.CharField('Иконка', max_length=50, choices=ICON_CHOICES, default='DocumentTextIcon')
     order = models.PositiveIntegerField(_('Порядок'), default=0)
     is_active = models.BooleanField(_('Активна'), default=True)
     created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
@@ -516,6 +554,15 @@ class GuideStep(models.Model):
     title_kg = models.CharField('Заголовок шага (кыргызский)', max_length=255)
     title_en = models.CharField('Заголовок шага (английский)', max_length=255)
     
+    description_ru = models.TextField('Описание шага (русский)', blank=True)
+    description_kg = models.TextField('Описание шага (кыргызский)', blank=True)
+    description_en = models.TextField('Описание шага (английский)', blank=True)
+    
+    timeframe_ru = models.CharField('Время выполнения (русский)', max_length=100, blank=True)
+    timeframe_kg = models.CharField('Время выполнения (кыргызский)', max_length=100, blank=True)
+    timeframe_en = models.CharField('Время выполнения (английский)', max_length=100, blank=True)
+    
+    step_number = models.PositiveIntegerField('Номер шага', default=1)
     order = models.PositiveIntegerField(_('Порядок'), default=0)
 
     class Meta:
