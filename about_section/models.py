@@ -53,7 +53,7 @@ class Partner(models.Model):
     
     icon = models.CharField(
         max_length=10,
-        verbose_name='Иконка',
+        verbose_name='категория',
         help_text='Эмодзи иконка партнера (например: 🏥, 🌐)',
         default='🤝'
     )
@@ -69,6 +69,127 @@ class Partner(models.Model):
     website = models.URLField(
         verbose_name='Веб-сайт',
         help_text='Официальный сайт партнера',
+        blank=True
+    )
+    
+    # Contact information
+    email = models.EmailField(
+        verbose_name='Email',
+        help_text='Контактный email партнера',
+        blank=True
+    )
+    
+    phone = models.CharField(
+        max_length=20,
+        verbose_name='Телефон',
+        help_text='Контактный телефон партнера',
+        blank=True
+    )
+    
+    # Location fields
+    country = models.CharField(
+        max_length=100,
+        verbose_name='Страна',
+        help_text='Страна расположения партнера',
+        default='Кыргызстан'
+    )
+    
+    country_en = models.CharField(
+        max_length=100,
+        verbose_name='Country (English)',
+        help_text='Country name in English',
+        blank=True
+    )
+    
+    country_ky = models.CharField(
+        max_length=100,
+        verbose_name='Өлкө (Кыргызча)',
+        help_text='Country name in Kyrgyz',
+        blank=True
+    )
+    
+    city = models.CharField(
+        max_length=100,
+        verbose_name='Город',
+        help_text='Город расположения партнера',
+        default='Бишкек'
+    )
+    
+    city_en = models.CharField(
+        max_length=100,
+        verbose_name='City (English)',
+        help_text='City name in English',
+        blank=True
+    )
+    
+    city_ky = models.CharField(
+        max_length=100,
+        verbose_name='Шаар (Кыргызча)',
+        help_text='City name in Kyrgyz',
+        blank=True
+    )
+    
+    address = models.CharField(
+        max_length=300,
+        verbose_name='Адрес',
+        help_text='Полный адрес партнера',
+        blank=True
+    )
+    
+    # GPS Coordinates
+    latitude = models.DecimalField(
+        max_digits=10,
+        decimal_places=7,
+        verbose_name='Широта',
+        help_text='GPS координата широты (например: 42.8746)',
+        blank=True,
+        null=True
+    )
+    
+    longitude = models.DecimalField(
+        max_digits=10,
+        decimal_places=7,
+        verbose_name='Долгота',
+        help_text='GPS координата долготы (например: 74.5698)',
+        blank=True,
+        null=True
+    )
+    
+    # Partner type
+    PARTNER_TYPE_CHOICES = [
+        ('clinical', '🏥 Клинические базы'),
+        ('university', '🎓 Университеты'),
+        ('organization', '🔬 Организации'),
+        ('business', '💼 Бизнес-партнеры'),
+        ('academic', '📚 Академические'),
+    ]
+    
+    partner_type = models.CharField(
+        max_length=20,
+        choices=PARTNER_TYPE_CHOICES,
+        default='academic',
+        verbose_name='Тип партнера',
+        help_text='Категория партнера'
+    )
+    
+    # Partnership details
+    established_year = models.PositiveIntegerField(
+        verbose_name='Год основания',
+        help_text='Год основания организации-партнера',
+        blank=True,
+        null=True
+    )
+    
+    cooperation_since = models.PositiveIntegerField(
+        verbose_name='Сотрудничество с',
+        help_text='Год начала сотрудничества',
+        blank=True,
+        null=True
+    )
+    
+    partnership_areas = models.TextField(
+        verbose_name='Области сотрудничества',
+        help_text='Области сотрудничества через запятую',
         blank=True
     )
     
@@ -152,6 +273,22 @@ class Partner(models.Model):
         elif language == 'ky' and self.description_ky:
             return self.description_ky
         return self.description
+    
+    def get_display_country(self, language='ru'):
+        """Get country name in specified language"""
+        if language == 'en' and self.country_en:
+            return self.country_en
+        elif language == 'ky' and self.country_ky:
+            return self.country_ky
+        return self.country
+    
+    def get_display_city(self, language='ru'):
+        """Get city name in specified language"""
+        if language == 'en' and self.city_en:
+            return self.city_en
+        elif language == 'ky' and self.city_ky:
+            return self.city_ky
+        return self.city
 
 
 class AboutSection(models.Model):

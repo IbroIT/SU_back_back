@@ -18,7 +18,7 @@ class PartnerAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('name', 'icon', 'logo', 'website', 'is_active', 'order')
+                'fields': ('name', 'icon', 'logo', 'website', 'is_active', 'order', 'latitude', 'longitude')
         }),
         ('Переводы названия', {
             'fields': ('name_en', 'name_ky'),

@@ -99,6 +99,17 @@ def partners_for_frontend(request):
                 'description': partner.get_display_description(language),
                 'website': partner.website,
                 'logo': partner.logo.url if partner.logo else None,
+                'email': partner.email,
+                'phone': partner.phone,
+                'country': partner.get_display_country(language),
+                'city': partner.get_display_city(language),
+                'address': partner.address,
+                'latitude': float(partner.latitude) if partner.latitude else None,
+                'longitude': float(partner.longitude) if partner.longitude else None,
+                'partner_type': partner.partner_type,
+                'established_year': partner.established_year,
+                'cooperation_since': partner.cooperation_since,
+                'partnership_areas': partner.partnership_areas,
                 'order': partner.order
             }
             partners_data.append(partner_data)

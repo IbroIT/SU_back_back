@@ -9,17 +9,27 @@ class PartnerSerializer(serializers.ModelSerializer):
     nameKey = serializers.SerializerMethodField()
     color = serializers.CharField(source='color_theme')
     glow = serializers.CharField(source='glow_effect')
+    display_name = serializers.SerializerMethodField()
+    display_description = serializers.SerializerMethodField()
+    display_country = serializers.SerializerMethodField()
+    display_city = serializers.SerializerMethodField()
     
     class Meta:
         model = Partner
         fields = [
-            'id', 'name', 'name_en', 'name_ky', 'nameKey',
+            'id', 'name', 'name_en', 'name_ky', 'nameKey', 'display_name',
             'icon', 'logo', 'website', 
-            'description', 'description_en', 'description_ky',
+            'description', 'description_en', 'description_ky', 'display_description',
+            'email', 'phone', 
+            'country', 'country_en', 'country_ky', 'display_country',
+            'city', 'city_en', 'city_ky', 'display_city',
+            'address', 'latitude', 'longitude',
+            'partner_type', 'established_year', 'cooperation_since', 'partnership_areas',
             'color_theme', 'color', 'glow_effect', 'glow',
             'is_active', 'order', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'nameKey', 'color', 'glow']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'nameKey', 'color', 'glow',
+                           'display_name', 'display_description', 'display_country', 'display_city']
     
     def get_nameKey(self, obj):
         """Generate a nameKey for frontend compatibility"""
@@ -29,12 +39,32 @@ class PartnerSerializer(serializers.ModelSerializer):
         name_key = name_key.replace('-', '_')
         return f'partners.{name_key}'
     
-    def to_representation(self, instance):
-        """Custom representation based on request language"""
-        data = super().to_representation(instance)
-        
-        # Get language from request context
+    def get_display_name(self, obj):
+        """Get display name based on request language"""
         request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_display_name(language)
+    
+    def get_display_description(self, obj):
+        """Get display description based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_display_description(language)
+    
+    def get_display_country(self, obj):
+        """Get display country based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_display_country(language)
+    
+    def get_display_city(self, obj):
+        """Get display city based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_display_city(language)
+    
+    def _get_language(self, request):
+        """Extract language from request"""
         language = 'ru'  # default
         
         if request:
@@ -47,11 +77,7 @@ class PartnerSerializer(serializers.ModelSerializer):
                 elif 'ky' in accept_language:
                     language = 'ky'
         
-        # Set localized name and description
-        data['display_name'] = instance.get_display_name(language)
-        data['display_description'] = instance.get_display_description(language)
-        
-        return data
+        return language
 
 
 class PartnerListSerializer(serializers.ModelSerializer):
@@ -61,12 +87,19 @@ class PartnerListSerializer(serializers.ModelSerializer):
     color = serializers.CharField(source='color_theme')
     glow = serializers.CharField(source='glow_effect')
     display_name = serializers.SerializerMethodField()
+    display_description = serializers.SerializerMethodField()
+    display_country = serializers.SerializerMethodField()
+    display_city = serializers.SerializerMethodField()
     
     class Meta:
         model = Partner
         fields = [
-            'id', 'nameKey', 'icon', 'color', 'glow', 
-            'display_name', 'order', 'website'
+            'id', 'nameKey', 'icon', 'logo', 'color', 'glow', 
+            'name', 'display_name', 'description', 'display_description',
+            'country', 'display_country', 'city', 'display_city',
+            'address', 'latitude', 'longitude', 'partner_type',
+            'email', 'phone', 'website', 'established_year', 
+            'cooperation_since', 'partnership_areas', 'order'
         ]
     
     def get_nameKey(self, obj):
@@ -79,7 +112,30 @@ class PartnerListSerializer(serializers.ModelSerializer):
     def get_display_name(self, obj):
         """Get display name based on request language"""
         request = self.context.get('request')
-        language = 'ru'
+        language = self._get_language(request)
+        return obj.get_display_name(language)
+    
+    def get_display_description(self, obj):
+        """Get display description based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_display_description(language)
+    
+    def get_display_country(self, obj):
+        """Get display country based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_display_country(language)
+    
+    def get_display_city(self, obj):
+        """Get display city based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_display_city(language)
+    
+    def _get_language(self, request):
+        """Extract language from request"""
+        language = 'ru'  # default
         
         if request:
             language = request.GET.get('lang', 'ru')
@@ -90,7 +146,7 @@ class PartnerListSerializer(serializers.ModelSerializer):
                 elif 'ky' in accept_language:
                     language = 'ky'
         
-        return obj.get_display_name(language)
+        return language
 
 
 class AboutSectionSerializer(serializers.ModelSerializer):
