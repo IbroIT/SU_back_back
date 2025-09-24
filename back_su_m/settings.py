@@ -176,6 +176,7 @@ REST_FRAMEWORK = {
 # -------------------
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "https://www.su-medical-school.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
