@@ -26,6 +26,9 @@ class PartnerOrganizationViewSet(viewsets.ModelViewSet):
     queryset = PartnerOrganization.objects.filter(is_active=True)
     serializer_class = PartnerOrganizationSerializer
     permission_classes = [AllowAny]
+    
+    def get_serializer_context(self):
+        return {'request': self.request}
 
 
 class PhotoAlbumViewSet(viewsets.ModelViewSet):
@@ -94,7 +97,7 @@ def internships_data(request):
     try:
         # Получаем организации-партнеры
         organizations = PartnerOrganization.objects.filter(is_active=True)
-        organizations_data = PartnerOrganizationSerializer(organizations, many=True).data
+        organizations_data = PartnerOrganizationSerializer(organizations, many=True, context={'request': request}).data
         
         # Добавляем совместимость с фронтендом для specializations
         for org in organizations_data:

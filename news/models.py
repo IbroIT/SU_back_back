@@ -53,7 +53,6 @@ class News(models.Model):
     content_en = models.TextField(verbose_name='Полное содержание (английский)')
     
     image = models.ImageField(upload_to='news/images/', blank=True, null=True, verbose_name='Изображение')
-    image_url = models.URLField(blank=True, null=True, verbose_name='URL изображения')
     
     category = models.ForeignKey(NewsCategory, on_delete=models.CASCADE, verbose_name='Категория')
     
@@ -81,15 +80,6 @@ class News(models.Model):
     
     def __str__(self):
         return self.title_ru
-    
-    @property
-    def image_url_or_default(self):
-        """Возвращает URL изображения или дефолтный URL"""
-        if self.image:
-            return self.image.url
-        elif self.image_url:
-            return self.image_url
-        return None
 
 
 class Event(models.Model):
@@ -112,6 +102,9 @@ class Event(models.Model):
     ]
     
     news = models.OneToOneField(News, on_delete=models.CASCADE, related_name='event_details', verbose_name='Новость')
+    
+    # Изображение события
+    image = models.ImageField(upload_to='events/images/', blank=True, null=True, verbose_name='Изображение события')
     
     # Детали события
     event_date = models.DateField(verbose_name='Дата события')
@@ -162,6 +155,9 @@ class Announcement(models.Model):
     ]
     
     news = models.OneToOneField(News, on_delete=models.CASCADE, related_name='announcement_details', verbose_name='Новость')
+    
+    # Изображение объявления
+    image = models.ImageField(upload_to='announcements/images/', blank=True, null=True, verbose_name='Изображение объявления')
     
     # Детали объявления
     announcement_type = models.CharField(max_length=50, choices=ANNOUNCEMENT_TYPES, verbose_name='Тип объявления')

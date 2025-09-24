@@ -74,11 +74,7 @@ class AcademicBuildingListCreateView(generics.ListCreateAPIView):
     search_fields = ['name_ru', 'name_kg', 'name_en', 'address_ru', 'address_kg', 'address_en']
     ordering_fields = ['order', 'name_ru', 'floors', 'created_at']
     ordering = ['order', 'name_ru']
-
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return AcademicBuildingListSerializer
-        return AcademicBuildingSerializer
+    serializer_class = AcademicBuildingSerializer
 
 
 class AcademicBuildingDetailView(generics.RetrieveUpdateDestroyAPIView):

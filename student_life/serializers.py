@@ -15,6 +15,7 @@ class OrganizationSpecializationSerializer(serializers.ModelSerializer):
 
 class PartnerOrganizationSerializer(serializers.ModelSerializer):
     specializations = OrganizationSpecializationSerializer(many=True, read_only=True)
+    logo_url = serializers.SerializerMethodField()
     
     class Meta:
         model = PartnerOrganization
@@ -22,8 +23,17 @@ class PartnerOrganizationSerializer(serializers.ModelSerializer):
             'id', 'name_ru', 'name_kg', 'name_en',
             'description_ru', 'description_kg', 'description_en',
             'type', 'location', 'contact_person', 'phone', 'email', 
-            'website', 'is_active', 'specializations'
+            'website', 'logo', 'logo_url', 'is_active', 'specializations'
         ]
+    
+    def get_logo_url(self, obj):
+        """Возвращает полный URL логотипа"""
+        if obj.logo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.logo.url)
+            return obj.logo.url
+        return None
 
 
 class StudentAppealSerializer(serializers.ModelSerializer):

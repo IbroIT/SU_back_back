@@ -102,7 +102,7 @@ class FacultyViewSet(viewsets.ReadOnlyModelViewSet):
             ).order_by('order', 'last_name')
             
             if faculty.exists():  # Только если есть преподаватели с такой должностью
-                serializer = FacultySerializer(faculty, many=True)
+                serializer = FacultySerializer(faculty, many=True, context={'request': request})
                 result[position_code] = {
                     'name': position_name,  # Русское название (по умолчанию)
                     'name_kg': position_translations.get(position_code, {}).get('kg', position_name),
@@ -172,7 +172,7 @@ class AccreditationViewSet(viewsets.ReadOnlyModelViewSet):
             ).order_by('order', '-issue_date')
             
             if accreditations.exists():  # Только если есть аккредитации такого типа
-                serializer = AccreditationSerializer(accreditations, many=True)
+                serializer = AccreditationSerializer(accreditations, many=True, context={'request': request})
                 result[type_code] = {
                     'name': type_name,  # Русское название (по умолчанию)
                     'name_kg': type_translations.get(type_code, {}).get('kg', type_name),

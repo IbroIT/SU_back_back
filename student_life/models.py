@@ -27,6 +27,13 @@ class PartnerOrganization(models.Model):
     phone = models.CharField(_('Телефон'), max_length=50)
     email = models.EmailField(_('Email'))
     website = models.URLField(_('Веб-сайт'), blank=True, null=True)
+    logo = models.ImageField(
+        upload_to='partner_organizations/',
+        verbose_name=_('Логотип'),
+        blank=True,
+        null=True,
+        help_text='Логотип или фото организации-партнера'
+    )
     is_active = models.BooleanField(_('Активна'), default=True)
     created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Дата обновления'), auto_now=True)

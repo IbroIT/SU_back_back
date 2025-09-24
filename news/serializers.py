@@ -134,7 +134,13 @@ class NewsListSerializer(serializers.ModelSerializer):
         ]
     
     def get_image_url(self, obj):
-        return obj.image_url_or_default
+        """Возвращает только реальные изображения, загруженные через админку"""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
     
     def get_tags(self, obj):
         # Получаем связанные теги через промежуточную модель
@@ -174,7 +180,13 @@ class NewsDetailSerializer(serializers.ModelSerializer):
         ]
     
     def get_image_url(self, obj):
-        return obj.image_url
+        """Возвращает только реальные изображения, загруженные через админку"""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
     
     def get_tags(self, obj):
         # Получаем связанные теги
@@ -243,8 +255,20 @@ class EventListSerializer(LanguageAwareSerializer):
         return obj.location_ru
     
     def get_image_url(self, obj):
-        """Получает URL изображения события"""
-        return obj.news.image_url_or_default
+        """Возвращает только реальные изображения событий, загруженные через админку"""
+        # Сначала проверяем собственное изображение события
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        # Если нет, то проверяем изображение новости
+        elif obj.news.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.news.image.url)
+            return obj.news.image.url
+        return None
     
     def get_participants_info(self, obj):
         if obj.max_participants:
@@ -261,6 +285,7 @@ class AnnouncementListSerializer(LanguageAwareSerializer):
     author = serializers.CharField(source='news.author_ru', read_only=True)
     published_at = serializers.DateTimeField(source='news.published_at', read_only=True)
     is_pinned = serializers.BooleanField(source='news.is_pinned', read_only=True)
+    image_url = serializers.SerializerMethodField()
     
     announcement_type_display = serializers.CharField(source='get_announcement_type_display', read_only=True)
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
@@ -270,7 +295,7 @@ class AnnouncementListSerializer(LanguageAwareSerializer):
         model = Announcement
         fields = [
             'id', 'title', 'slug', 'summary', 'content', 'author', 
-            'published_at', 'is_pinned',
+            'published_at', 'is_pinned', 'image_url',
             'announcement_type', 'announcement_type_display',
             'priority', 'priority_display',
             'deadline', 'is_deadline_approaching',
@@ -285,6 +310,22 @@ class AnnouncementListSerializer(LanguageAwareSerializer):
     
     def get_content(self, obj):
         return self.get_localized_field(obj.news, 'content')
+    
+    def get_image_url(self, obj):
+        """Возвращает только реальные изображения объявлений, загруженные через админку"""
+        # Сначала проверяем собственное изображение объявления
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        # Если нет, то проверяем изображение новости
+        elif obj.news.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.news.image.url)
+            return obj.news.image.url
+        return None
     
     def get_attachment_name_display(self, obj):
         if obj.attachment:

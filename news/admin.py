@@ -95,7 +95,7 @@ class NewsAdmin(admin.ModelAdmin):
             )
         }),
         ('Медиа', {
-            'fields': ('image', 'image_url', 'image_preview'),
+            'fields': ('image', 'image_preview'),
         }),
         ('Классификация', {
             'fields': ('category', ('author_ru', 'author_kg', 'author_en'))
@@ -114,8 +114,6 @@ class NewsAdmin(admin.ModelAdmin):
     def image_preview(self, obj):
         if obj.image:
             return format_html('<img src="{}" width="100" height="60" />', obj.image.url)
-        elif obj.image_url:
-            return format_html('<img src="{}" width="100" height="60" />', obj.image_url)
         return "Нет изображения"
     image_preview.short_description = 'Превью'
     
