@@ -5,13 +5,298 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import Partner, AboutSection
+from .models import Partner, AboutSection, Accreditation, CouncilType, CouncilMember, CouncilDocument
 from .serializers import (
     PartnerSerializer, 
     PartnerListSerializer, 
     AboutSectionSerializer, 
-    AboutSectionWithPartnersSerializer
+    AboutSectionWithPartnersSerializer,
+    AccreditationSerializer,
+    CouncilTypeSerializer,
+    CouncilTypeListSerializer,
+    CouncilMemberSerializer,
+    CouncilDocumentSerializer
 )
+
+
+class AccreditationListView(generics.ListAPIView):
+    """
+    Get list of active accreditations
+    Supports filtering by type and ordering
+    """
+    queryset = Accreditation.objects.filter(is_active=True)
+    serializer_class = AccreditationSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['accreditation_type', 'is_active']
+    search_fields = ['title', 'title_en', 'title_ky', 'description']
+    ordering_fields = ['order', 'year', 'title', 'created_at']
+    ordering = ['order', 'title']
+
+
+class AccreditationDetailView(generics.RetrieveAPIView):
+    """
+    Get detailed information about a specific accreditation
+    """
+    queryset = Accreditation.objects.filter(is_active=True)
+    serializer_class = AccreditationSerializer
+    lookup_field = 'id'
+
+
+class CouncilTypeListView(generics.ListAPIView):
+    """
+    Get list of active council types for navigation
+    """
+    queryset = CouncilType.objects.filter(is_active=True)
+    serializer_class = CouncilTypeListSerializer
+    ordering = ['order', 'name']
+
+
+class CouncilTypeDetailView(generics.RetrieveAPIView):
+    """
+    Get detailed information about a specific council type with members and documents
+    """
+    queryset = CouncilType.objects.filter(is_active=True)
+    serializer_class = CouncilTypeSerializer
+    lookup_field = 'slug'
+
+
+@api_view(['GET'])
+def accreditations_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Status component
+    Returns accreditations data in the exact format expected by the React component
+    """
+    try:
+        # Get active accreditations ordered by order field
+        accreditations = Accreditation.objects.filter(is_active=True).order_by('order', 'title')
+        
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Get filter parameter
+        filter_type = request.GET.get('type', 'all')
+        
+        # Apply filter if specified
+        if filter_type != 'all':
+            accreditations = accreditations.filter(accreditation_type=filter_type)
+        
+        # Format data for frontend
+        accreditations_data = []
+        for accreditation in accreditations:
+            accreditation_data = {
+                'id': accreditation.id,
+                'title': accreditation.get_display_title(language),
+                'description': accreditation.get_display_description(language),
+                'fullDescription': accreditation.get_display_full_description(language),
+                'logo': accreditation.logo,
+                'year': accreditation.year,
+                'status': accreditation.get_display_status(language),
+                'validity': accreditation.get_display_validity(language),
+                'level': accreditation.get_display_level(language),
+                'type': accreditation.accreditation_type,
+                'benefits': accreditation.get_display_benefits(language),
+                'color': accreditation.color,
+                'iconColor': accreditation.icon_color,
+                'badgeColor': accreditation.badge_color,
+            }
+            accreditations_data.append(accreditation_data)
+        
+        return Response({
+            'success': True,
+            'count': len(accreditations_data),
+            'data': accreditations_data
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def councils_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Advices component
+    Returns councils data in the exact format expected by the React component
+    """
+    try:
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Get active council types
+        council_types = CouncilType.objects.filter(is_active=True).order_by('order', 'name')
+        
+        # Format sections data for frontend
+        sections_data = {}
+        sections_list = []
+        
+        for council_type in council_types:
+            # Get active members for this council type
+            members = CouncilMember.objects.filter(
+                council_type=council_type, 
+                is_active=True
+            ).order_by('order', 'name')
+            
+            # Get active documents for this council type
+            documents = CouncilDocument.objects.filter(
+                council_type=council_type,
+                is_active=True
+            ).order_by('order', '-date')
+            
+            # Format members data
+            members_data = []
+            for member in members:
+                member_data = {
+                    'id': member.id,
+                    'name': member.get_display_name(language),
+                    'position': member.get_display_position(language),
+                    'department': member.get_display_department(language),
+                    'bio': member.get_display_bio(language),
+                    'photo': member.photo.url if member.photo else None,
+                    'email': member.email,
+                    'phone': member.phone,
+                }
+                members_data.append(member_data)
+            
+            # Format documents data
+            documents_data = []
+            for document in documents:
+                document_data = {
+                    'id': document.id,
+                    'title': document.get_display_title(language),
+                    'date': document.date.strftime('%d.%m.%Y'),
+                    'size': document.size,
+                    'description': document.get_display_description(language),
+                    'file_url': document.file.url if document.file else None,
+                }
+                documents_data.append(document_data)
+            
+            # Create section data
+            section_data = {
+                'title': council_type.get_display_name(language),
+                'description': council_type.get_display_description(language),
+                'members': members_data if members_data else None,
+                'documents': documents_data if documents_data else None,
+            }
+            
+            # Add to sections data with slug as key
+            sections_data[council_type.slug] = section_data
+            
+            # Add to sections list for navigation
+            sections_list.append({
+                'id': council_type.slug,
+                'name': council_type.get_display_name(language)
+            })
+        
+        return Response({
+            'success': True,
+            'sections_data': sections_data,
+            'sections_list': sections_list,
+            'count': len(sections_data)
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def council_detail_for_frontend(request, slug):
+    """
+    Get detailed information about a specific council type for frontend
+    """
+    try:
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Get council type
+        council_type = get_object_or_404(CouncilType, slug=slug, is_active=True)
+        
+        # Get active members
+        members = CouncilMember.objects.filter(
+            council_type=council_type,
+            is_active=True
+        ).order_by('order', 'name')
+        
+        # Get active documents
+        documents = CouncilDocument.objects.filter(
+            council_type=council_type,
+            is_active=True
+        ).order_by('order', '-date')
+        
+        # Format members data
+        members_data = []
+        for member in members:
+            member_data = {
+                'id': member.id,
+                'name': member.get_display_name(language),
+                'position': member.get_display_position(language),
+                'department': member.get_display_department(language),
+                'bio': member.get_display_bio(language),
+                'photo': member.photo.url if member.photo else None,
+                'email': member.email,
+                'phone': member.phone,
+            }
+            members_data.append(member_data)
+        
+        # Format documents data
+        documents_data = []
+        for document in documents:
+            document_data = {
+                'id': document.id,
+                'title': document.get_display_title(language),
+                'date': document.date.strftime('%d.%m.%Y'),
+                'size': document.size,
+                'description': document.get_display_description(language),
+                'file_url': document.file.url if document.file else None,
+            }
+            documents_data.append(document_data)
+        
+        # Create response data
+        section_data = {
+            'title': council_type.get_display_name(language),
+            'description': council_type.get_display_description(language),
+            'members': members_data if members_data else None,
+            'documents': documents_data if documents_data else None,
+        }
+        
+        return Response({
+            'success': True,
+            'data': section_data
+        })
+        
+    except CouncilType.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Council type not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PartnerListView(generics.ListAPIView):

@@ -1,6 +1,191 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Partner, AboutSection
+from .models import Partner, AboutSection, Accreditation, CouncilType, CouncilMember, CouncilDocument
+
+
+@admin.register(Accreditation)
+class AccreditationAdmin(admin.ModelAdmin):
+    """Admin interface for Accreditation model"""
+    
+    list_display = [
+        'title', 'logo_display', 'year', 'accreditation_type', 
+        'status', 'is_active', 'order', 'color_preview'
+    ]
+    list_filter = ['accreditation_type', 'status', 'is_active', 'year']
+    search_fields = ['title', 'title_en', 'title_ky', 'description']
+    ordering = ['order', 'title']
+    list_editable = ['is_active', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('title', 'logo', 'year', 'accreditation_type', 'status', 'validity', 'level', 'is_active', 'order')
+        }),
+        ('Переводы основных полей', {
+            'fields': ('title_en', 'title_ky', 'status_en', 'status_ky', 'validity_en', 'validity_ky', 'level_en', 'level_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Описания', {
+            'fields': ('description', 'full_description'),
+        }),
+        ('Переводы описаний', {
+            'fields': ('description_en', 'description_ky', 'full_description_en', 'full_description_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Преимущества', {
+            'fields': ('benefits', 'benefits_en', 'benefits_ky'),
+            'description': 'Введите преимущества в формате JSON списка, например: ["Преимущество 1", "Преимущество 2"]'
+        }),
+        ('Внешний вид', {
+            'fields': ('color', 'icon_color', 'badge_color'),
+        }),
+    )
+    
+    def logo_display(self, obj):
+        """Display logo emoji in admin list"""
+        if obj.logo:
+            return format_html('<span style="font-size: 20px;">{}</span>', obj.logo)
+        return '-'
+    logo_display.short_description = 'Лого'
+    
+    def color_preview(self, obj):
+        """Display color preview in admin list"""
+        color_map = {
+            'from-blue-500 to-blue-600': 'linear-gradient(135deg, #3b82f6, #2563eb)',
+            'from-green-500 to-green-600': 'linear-gradient(135deg, #10b981, #059669)',
+            'from-purple-500 to-purple-600': 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+            'from-orange-500 to-orange-600': 'linear-gradient(135deg, #f97316, #ea580c)',
+            'from-teal-500 to-teal-600': 'linear-gradient(135deg, #14b8a6, #0d9488)',
+            'from-indigo-500 to-indigo-600': 'linear-gradient(135deg, #6366f1, #4f46e5)',
+        }
+        
+        gradient = color_map.get(obj.color, '#3b82f6')
+        return format_html(
+            '<div style="width: 30px; height: 20px; background: {}; border-radius: 4px; border: 1px solid #ddd;"></div>',
+            gradient
+        )
+    color_preview.short_description = 'Цвет'
+
+
+@admin.register(CouncilType)
+class CouncilTypeAdmin(admin.ModelAdmin):
+    """Admin interface for CouncilType model"""
+    
+    list_display = ['name', 'slug', 'members_count', 'documents_count', 'is_active', 'order']
+    list_filter = ['is_active']
+    search_fields = ['name', 'name_en', 'name_ky', 'description']
+    ordering = ['order', 'name']
+    list_editable = ['is_active', 'order']
+    prepopulated_fields = {'slug': ('name',)}
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name', 'slug', 'is_active', 'order')
+        }),
+        ('Переводы названия', {
+            'fields': ('name_en', 'name_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Описание', {
+            'fields': ('description',),
+        }),
+        ('Переводы описания', {
+            'fields': ('description_en', 'description_ky'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def members_count(self, obj):
+        """Count of active members"""
+        return obj.members.filter(is_active=True).count()
+    members_count.short_description = 'Члены'
+    
+    def documents_count(self, obj):
+        """Count of active documents"""
+        return obj.documents.filter(is_active=True).count()
+    documents_count.short_description = 'Документы'
+
+
+class CouncilMemberInline(admin.TabularInline):
+    """Inline admin for CouncilMember"""
+    model = CouncilMember
+    extra = 1
+    fields = ['name', 'position', 'department', 'email', 'phone', 'is_active', 'order']
+
+
+class CouncilDocumentInline(admin.TabularInline):
+    """Inline admin for CouncilDocument"""
+    model = CouncilDocument
+    extra = 1
+    fields = ['title', 'file', 'date', 'is_active', 'order']
+
+
+@admin.register(CouncilMember)
+class CouncilMemberAdmin(admin.ModelAdmin):
+    """Admin interface for CouncilMember model"""
+    
+    list_display = ['name', 'position', 'council_type', 'department', 'has_photo', 'is_active', 'order']
+    list_filter = ['council_type', 'is_active']
+    search_fields = ['name', 'position', 'department', 'bio']
+    ordering = ['council_type', 'order', 'name']
+    list_editable = ['is_active', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('council_type', 'name', 'photo', 'email', 'phone', 'is_active', 'order')
+        }),
+        ('Переводы ФИО', {
+            'fields': ('name_en', 'name_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Должность и подразделение', {
+            'fields': ('position', 'department'),
+        }),
+        ('Переводы должности и подразделения', {
+            'fields': ('position_en', 'position_ky', 'department_en', 'department_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Биография', {
+            'fields': ('bio',),
+        }),
+        ('Переводы биографии', {
+            'fields': ('bio_en', 'bio_ky'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def has_photo(self, obj):
+        """Check if member has photo"""
+        return bool(obj.photo)
+    has_photo.boolean = True
+    has_photo.short_description = 'Есть фото'
+
+
+@admin.register(CouncilDocument)
+class CouncilDocumentAdmin(admin.ModelAdmin):
+    """Admin interface for CouncilDocument model"""
+    
+    list_display = ['title', 'council_type', 'date', 'size', 'is_active', 'order']
+    list_filter = ['council_type', 'is_active', 'date']
+    search_fields = ['title', 'title_en', 'title_ky', 'description']
+    ordering = ['council_type', 'order', '-date']
+    list_editable = ['is_active', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('council_type', 'title', 'file', 'date', 'size', 'is_active', 'order')
+        }),
+        ('Переводы названия', {
+            'fields': ('title_en', 'title_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Описание', {
+            'fields': ('description',),
+        }),
+        ('Переводы описания', {
+            'fields': ('description_en', 'description_ky'),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 @admin.register(Partner)
