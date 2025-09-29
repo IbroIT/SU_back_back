@@ -5,12 +5,19 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import Partner, AboutSection
+from .models import (
+    Partner, AboutSection, Founder, FounderAchievement, 
+    OrganizationStructure, Achievement, UniversityStatistic
+)
 from .serializers import (
     PartnerSerializer, 
     PartnerListSerializer, 
     AboutSectionSerializer, 
-    AboutSectionWithPartnersSerializer
+    AboutSectionWithPartnersSerializer,
+    FounderSerializer,
+    OrganizationStructureSerializer,
+    AchievementSerializer,
+    UniversityStatisticSerializer
 )
 
 
@@ -221,4 +228,329 @@ def partners_stats(request):
         return Response({
             'success': False,
             'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Founders Views
+class FounderListView(generics.ListAPIView):
+    """
+    Get list of active founders with multilingual support
+    """
+    queryset = Founder.objects.filter(is_active=True)
+    serializer_class = FounderSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['is_active']
+    ordering_fields = ['order', 'name_ru']
+    ordering = ['order', 'name_ru']
+
+
+class FounderDetailView(generics.RetrieveAPIView):
+    """
+    Get detailed information about a specific founder
+    """
+    queryset = Founder.objects.filter(is_active=True)
+    serializer_class = FounderSerializer
+    lookup_field = 'id'
+
+
+@api_view(['GET'])
+def founders_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Founders component
+    Returns founders data in the exact format expected by the React component
+    """
+    try:
+        # Get active founders ordered by order field
+        founders = Founder.objects.filter(is_active=True).order_by('order', 'name_ru')
+        
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Format data for frontend
+        founders_data = []
+        for founder in founders:
+            # Get achievements for this language
+            achievements = []
+            achievement_objects = founder.achievement_set.all().order_by('order')
+            if achievement_objects.exists():
+                achievements = [ach.get_display_achievement(language) for ach in achievement_objects]
+            else:
+                achievements = founder.get_achievements_for_language(language)
+            
+            # Get image URL
+            image_url = None
+            if founder.image:
+                image_url = request.build_absolute_uri(founder.image.url)
+            else:
+                # Fallback to placeholder
+                image_url = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face"
+            
+            founder_data = {
+                'id': founder.id,
+                'name': founder.get_display_name(language),
+                'position': founder.get_display_position(language),
+                'years': founder.years,
+                'image': image_url,
+                'description': founder.get_display_description(language),
+                'achievements': achievements
+            }
+            
+            founders_data.append(founder_data)
+        
+        return Response({
+            'success': True,
+            'results': founders_data,
+            'count': len(founders_data),
+            'language': language
+        })
+        
+    except Exception as e:
+        print(f"Error in founders_for_frontend: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'results': []
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Organization Structure Views
+class OrganizationStructureListView(generics.ListAPIView):
+    """
+    Get list of active organizational structures with multilingual support
+    """
+    queryset = OrganizationStructure.objects.filter(is_active=True, parent__isnull=True)
+    serializer_class = OrganizationStructureSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['structure_type', 'is_active']
+    ordering_fields = ['structure_type', 'order', 'name_ru']
+    ordering = ['structure_type', 'order', 'name_ru']
+
+
+@api_view(['GET'])
+def structure_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Structure component
+    Returns structure data in the exact format expected by the React component
+    """
+    try:
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Get structure type filter
+        structure_type = request.GET.get('type', None)
+        
+        # Build queryset
+        queryset = OrganizationStructure.objects.filter(is_active=True, parent__isnull=True)
+        if structure_type:
+            queryset = queryset.filter(structure_type=structure_type)
+        
+        structures = queryset.order_by('structure_type', 'order')
+        
+        # Group by structure type
+        structure_data = {}
+        
+        for structure in structures:
+            # Get structure type key for grouping
+            type_key = structure.structure_type
+            
+            if type_key not in structure_data:
+                # Map structure types to display names
+                type_display_mapping = {
+                    'leadership': {
+                        'ru': 'Руководство',
+                        'en': 'Leadership', 
+                        'ky': 'Жетекчилик'
+                    },
+                    'faculties': {
+                        'ru': 'Факультеты',
+                        'en': 'Faculties',
+                        'ky': 'Факультеттер'
+                    },
+                    'administrative': {
+                        'ru': 'Административные подразделения',
+                        'en': 'Administrative Departments',
+                        'ky': 'Администрациялык бөлүмдөр'
+                    },
+                    'support': {
+                        'ru': 'Вспомогательные подразделения',
+                        'en': 'Support Departments',
+                        'ky': 'Жардамчы бөлүмдөр'
+                    }
+                }
+                
+                title = type_display_mapping.get(type_key, {}).get(language, type_key)
+                
+                structure_data[type_key] = {
+                    'title': title,
+                    'icon': structure.icon,
+                    'items': []
+                }
+            
+            # Get child departments
+            children = structure.children.filter(is_active=True).order_by('order')
+            departments = [child.get_display_name(language) for child in children]
+            
+            item_data = {
+                'name': structure.get_display_name(language),
+                'head': structure.get_display_head_name(language),
+                'phone': structure.phone,
+                'email': structure.email,
+                'departments': departments
+            }
+            
+            structure_data[type_key]['items'].append(item_data)
+        
+        return Response({
+            'success': True,
+            'data': structure_data,
+            'language': language
+        })
+        
+    except Exception as e:
+        print(f"Error in structure_for_frontend: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'data': {}
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Achievement Views
+class AchievementListView(generics.ListAPIView):
+    """
+    Get list of active achievements with multilingual support
+    """
+    queryset = Achievement.objects.filter(is_active=True)
+    serializer_class = AchievementSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['category', 'featured', 'year', 'is_active']
+    ordering_fields = ['year', 'order', 'featured']
+    ordering = ['-featured', '-year', 'order']
+
+
+@api_view(['GET'])
+def achievements_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Achievements component
+    Returns achievements data in the exact format expected by the React component
+    """
+    try:
+        # Get active achievements ordered by featured, year, and order
+        achievements = Achievement.objects.filter(is_active=True).order_by('-featured', '-year', 'order')
+        
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Get category filter
+        category = request.GET.get('category', 'all')
+        if category != 'all':
+            achievements = achievements.filter(category=category)
+        
+        # Format data for frontend
+        achievements_data = []
+        for achievement in achievements:
+            achievement_data = {
+                'id': achievement.id,
+                'title': achievement.get_display_title(language),
+                'description': achievement.get_display_description(language),
+                'year': str(achievement.year),
+                'category': achievement.category,
+                'icon': achievement.icon,
+                'iconColor': achievement.icon_color,
+                'featured': achievement.featured
+            }
+            
+            achievements_data.append(achievement_data)
+        
+        return Response({
+            'success': True,
+            'data': achievements_data,
+            'count': len(achievements_data),
+            'language': language
+        })
+        
+    except Exception as e:
+        print(f"Error in achievements_for_frontend: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'data': []
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Statistics Views
+class UniversityStatisticListView(generics.ListAPIView):
+    """
+    Get list of active university statistics with multilingual support
+    """
+    queryset = UniversityStatistic.objects.filter(is_active=True)
+    serializer_class = UniversityStatisticSerializer
+    filter_backends = [OrderingFilter]
+    ordering_fields = ['order', 'name_ru']
+    ordering = ['order', 'name_ru']
+
+
+@api_view(['GET'])
+def statistics_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Statistics component
+    Returns statistics data in the exact format expected by the React component
+    """
+    try:
+        # Get active statistics ordered by order field
+        statistics = UniversityStatistic.objects.filter(is_active=True).order_by('order', 'name_ru')
+        
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Format data for frontend
+        statistics_data = []
+        for stat in statistics:
+            stat_data = {
+                'id': stat.id,
+                'name': stat.get_display_name(language),
+                'value': stat.value,
+                'unit': stat.unit,
+                'icon': stat.icon
+            }
+            
+            statistics_data.append(stat_data)
+        
+        return Response({
+            'success': True,
+            'data': statistics_data,
+            'count': len(statistics_data),
+            'language': language
+        })
+        
+    except Exception as e:
+        print(f"Error in statistics_for_frontend: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'data': []
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

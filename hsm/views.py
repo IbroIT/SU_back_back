@@ -2,13 +2,64 @@ from rest_framework import generics, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
-from .models import  Faculty, Accreditation
+from .models import Faculty, Accreditation, Leadership
 from .serializers import (
     FacultySerializer, 
     FacultyListSerializer,
-    AccreditationSerializer, 
+    AccreditationSerializer,
+    LeadershipSerializer,
 )
 
+
+class LeadershipViewSet(viewsets.ReadOnlyModelViewSet):
+    """API для руководства ВШМ"""
+    queryset = Leadership.objects.filter(is_active=True)
+    serializer_class = LeadershipSerializer
+    
+    def get_queryset(self):
+        queryset = Leadership.objects.filter(is_active=True)
+        leadership_type = self.request.query_params.get('type', None)
+        department = self.request.query_params.get('department', None)
+        
+        if leadership_type:
+            queryset = queryset.filter(leadership_type=leadership_type)
+        
+        if department:
+            queryset = queryset.filter(department=department)
+            
+        return queryset
+    
+    @action(detail=False, methods=['get'])
+    def directors(self, request):
+        """Получить только директоров"""
+        directors = Leadership.objects.filter(is_active=True, is_director=True).order_by('order')
+        serializer = self.get_serializer(directors, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def department_heads(self, request):
+        """Получить заведующих кафедрами"""
+        heads = Leadership.objects.filter(
+            is_active=True, 
+            is_director=False,
+            leadership_type='department_head'
+        ).order_by('order')
+        serializer = self.get_serializer(heads, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_department(self, request):
+        """Получить руководство по департаментам"""
+        department = request.query_params.get('department')
+        if not department:
+            return Response({'error': 'Department parameter is required'}, status=400)
+        
+        leadership = Leadership.objects.filter(
+            is_active=True,
+            department=department
+        ).order_by('order')
+        serializer = self.get_serializer(leadership, many=True)
+        return Response(serializer.data)
 
 
 class FacultyViewSet(viewsets.ReadOnlyModelViewSet):

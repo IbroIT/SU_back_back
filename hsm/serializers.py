@@ -1,5 +1,36 @@
 from rest_framework import serializers
-from .models import Faculty, Accreditation
+from .models import Faculty, Accreditation, Leadership
+
+
+class LeadershipSerializer(serializers.ModelSerializer):
+    """Сериализатор для руководства ВШМ"""
+    leadership_type_display = serializers.CharField(source='get_leadership_type_display', read_only=True)
+    image_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Leadership
+        fields = [
+            'id', 'name', 'name_kg', 'name_en',
+            'position', 'position_kg', 'position_en',
+            'degree', 'degree_kg', 'degree_en',
+            'experience', 'experience_kg', 'experience_en',
+            'bio', 'bio_kg', 'bio_en',
+            'achievements', 'achievements_kg', 'achievements_en',
+            'department', 'department_kg', 'department_en',
+            'specialization', 'specialization_kg', 'specialization_en',
+            'staff_count', 'staff_count_kg', 'staff_count_en',
+            'email', 'phone', 'image', 'image_url',
+            'leadership_type', 'leadership_type_display',
+            'is_director', 'order'
+        ]
+    
+    def get_image_url(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
 
 class FacultyListSerializer(serializers.ModelSerializer):

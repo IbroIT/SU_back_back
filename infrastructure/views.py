@@ -6,13 +6,16 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Q, Sum
 
 from .models import (
-    Hospital, Laboratory, AcademicBuilding, Dormitory
+    Hospital, Laboratory, AcademicBuilding, Dormitory,
+    ClassroomCategory, Classroom, StartupCategory, Startup
 )
 from .serializers import (
     HospitalSerializer, HospitalListSerializer,
     LaboratorySerializer, LaboratoryListSerializer,
     AcademicBuildingSerializer, AcademicBuildingListSerializer,
-    DormitorySerializer, DormitoryListSerializer
+    DormitorySerializer, DormitoryListSerializer,
+    ClassroomCategorySerializer, ClassroomSerializer, ClassroomLanguageAwareSerializer,
+    StartupCategorySerializer, StartupSerializer, StartupLanguageAwareSerializer
 )
 
 
@@ -188,3 +191,131 @@ def search_infrastructure(request):
     }
 
     return Response(data)
+
+
+# === CLASSROOM VIEWS ===
+
+class ClassroomCategoryListView(generics.ListAPIView):
+    queryset = ClassroomCategory.objects.all().prefetch_related('classrooms')
+    serializer_class = ClassroomCategorySerializer
+    ordering = ['order', 'name_ru']
+
+
+class ClassroomListView(generics.ListAPIView):
+    queryset = Classroom.objects.filter(is_active=True).select_related('category').prefetch_related('equipment', 'features')
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['category']
+    search_fields = ['name_ru', 'name_kg', 'name_en', 'description_ru', 'description_kg', 'description_en']
+    ordering_fields = ['order', 'name_ru', 'capacity', 'floor']
+    ordering = ['order', 'name_ru']
+
+    def get_serializer_class(self):
+        # Use language-aware serializer for frontend endpoints
+        if 'frontend' in self.request.path:
+            return ClassroomLanguageAwareSerializer
+        return ClassroomSerializer
+
+
+class ClassroomDetailView(generics.RetrieveAPIView):
+    queryset = Classroom.objects.filter(is_active=True).select_related('category').prefetch_related('equipment', 'features')
+    
+    def get_serializer_class(self):
+        # Use language-aware serializer for frontend endpoints
+        if 'frontend' in self.request.path:
+            return ClassroomLanguageAwareSerializer
+        return ClassroomSerializer
+
+
+@api_view(['GET'])
+def classrooms_for_frontend(request):
+    '''Optimized endpoint for frontend with language support'''
+    try:
+        # Get categories with counts
+        categories = ClassroomCategory.objects.prefetch_related('classrooms').all()
+        category_serializer = ClassroomCategorySerializer(categories, many=True, context={'request': request})
+        
+        # Get classrooms
+        classrooms = Classroom.objects.filter(is_active=True).select_related('category').prefetch_related('equipment', 'features').order_by('order', 'name_ru')
+        classroom_serializer = ClassroomLanguageAwareSerializer(classrooms, many=True, context={'request': request})
+        
+        return Response({
+            'success': True,
+            'data': {
+                'categories': category_serializer.data,
+                'classrooms': classroom_serializer.data
+            }
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# === STARTUP VIEWS ===
+
+class StartupCategoryListView(generics.ListAPIView):
+    queryset = StartupCategory.objects.all().prefetch_related('startups')
+    serializer_class = StartupCategorySerializer
+    ordering = ['order', 'name_ru']
+
+
+class StartupListView(generics.ListAPIView):
+    queryset = Startup.objects.filter(is_active=True).select_related('category').prefetch_related('team_members', 'investors', 'achievements')
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['category', 'stage', 'status']
+    search_fields = ['name_ru', 'name_kg', 'name_en', 'description_ru', 'description_kg', 'description_en']
+    ordering_fields = ['order', 'name_ru', 'year']
+    ordering = ['order', 'name_ru']
+
+    def get_serializer_class(self):
+        # Use language-aware serializer for frontend endpoints
+        if 'frontend' in self.request.path:
+            return StartupLanguageAwareSerializer
+        return StartupSerializer
+
+
+class StartupDetailView(generics.RetrieveAPIView):
+    queryset = Startup.objects.filter(is_active=True).select_related('category').prefetch_related('team_members', 'investors', 'achievements')
+    
+    def get_serializer_class(self):
+        # Use language-aware serializer for frontend endpoints
+        if 'frontend' in self.request.path:
+            return StartupLanguageAwareSerializer
+        return StartupSerializer
+
+
+@api_view(['GET'])
+def startups_for_frontend(request):
+    '''Optimized endpoint for frontend with language support'''
+    try:
+        # Get categories with counts
+        categories = StartupCategory.objects.prefetch_related('startups').all()
+        category_serializer = StartupCategorySerializer(categories, many=True, context={'request': request})
+        
+        # Get startups
+        startups = Startup.objects.filter(is_active=True).select_related('category').prefetch_related('team_members', 'investors', 'achievements').order_by('order', 'name_ru')
+        startup_serializer = StartupLanguageAwareSerializer(startups, many=True, context={'request': request})
+        
+        # Calculate statistics
+        stats = {
+            'active_startups': startups.count(),
+            'total_funding': '5M+',  # You can calculate this from actual data
+            'team_members': sum(startup.team_members.count() for startup in startups),
+            'patents': '10+'  # You can add a field for this if needed
+        }
+        
+        return Response({
+            'success': True,
+            'data': {
+                'categories': category_serializer.data,
+                'startups': startup_serializer.data,
+                'statistics': stats
+            }
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

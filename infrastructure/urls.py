@@ -18,6 +18,18 @@ urlpatterns = [
     path('dormitories/', views.DormitoryListCreateView.as_view(), name='dormitory-list-create'),
     path('dormitories/<int:pk>/', views.DormitoryDetailView.as_view(), name='dormitory-detail'),
     
+    # Classrooms/Audience
+    path('classrooms/categories/', views.ClassroomCategoryListView.as_view(), name='classroom-category-list'),
+    path('classrooms/', views.ClassroomListView.as_view(), name='classroom-list'),
+    path('classrooms/<int:pk>/', views.ClassroomDetailView.as_view(), name='classroom-detail'),
+    path('classrooms/frontend/', views.classrooms_for_frontend, name='classrooms-frontend'),
+    
+    # Startups
+    path('startups/categories/', views.StartupCategoryListView.as_view(), name='startup-category-list'),
+    path('startups/', views.StartupListView.as_view(), name='startup-list'),
+    path('startups/<int:pk>/', views.StartupDetailView.as_view(), name='startup-detail'),
+    path('startups/frontend/', views.startups_for_frontend, name='startups-frontend'),
+    
     # Overview and Search
     path('overview/', views.infrastructure_overview, name='infrastructure-overview'),
     path('search/', views.search_infrastructure, name='infrastructure-search'),

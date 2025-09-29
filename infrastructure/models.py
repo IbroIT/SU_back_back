@@ -352,3 +352,216 @@ class DormitoryPhoto(models.Model):
 
     def __str__(self):
         return f"{self.dormitory.name_ru} - {self.get_type_display()}"
+
+
+# === CLASSROOM/AUDIENCE MODELS ===
+
+class ClassroomCategory(models.Model):
+    name_ru = models.CharField(max_length=100, verbose_name=_("Название (рус)"))
+    name_kg = models.CharField(max_length=100, verbose_name=_("Название (кырг)"))
+    name_en = models.CharField(max_length=100, verbose_name=_("Название (англ)"))
+    
+    icon = models.CharField(max_length=10, default='🏫', verbose_name=_("Иконка"))
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
+
+    class Meta:
+        ordering = ['order', 'name_ru']
+        verbose_name = _("Категория аудитории")
+        verbose_name_plural = _("Категории аудиторий")
+
+    def __str__(self):
+        return self.name_ru
+
+
+class Classroom(models.Model):
+    category = models.ForeignKey(ClassroomCategory, on_delete=models.CASCADE, related_name='classrooms', verbose_name=_("Категория"))
+    
+    name_ru = models.CharField(max_length=200, verbose_name=_("Название (рус)"))
+    name_kg = models.CharField(max_length=200, verbose_name=_("Название (кырг)"))
+    name_en = models.CharField(max_length=200, verbose_name=_("Название (англ)"))
+    
+    description_ru = models.TextField(verbose_name=_("Описание (рус)"))
+    description_kg = models.TextField(verbose_name=_("Описание (кырг)"))
+    description_en = models.TextField(verbose_name=_("Описание (англ)"))
+    
+    capacity = models.PositiveIntegerField(verbose_name=_("Вместимость"))
+    floor = models.CharField(max_length=10, verbose_name=_("Этаж"))
+    size = models.PositiveIntegerField(verbose_name=_("Размер (м²)"))
+    
+    image = models.CharField(max_length=10, default='🏫', verbose_name=_("Эмодзи"))
+    
+    is_active = models.BooleanField(default=True, verbose_name=_("Активная"))
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+
+    class Meta:
+        ordering = ['order', 'name_ru']
+        verbose_name = _("Аудитория")
+        verbose_name_plural = _("Аудитории")
+
+    def __str__(self):
+        return self.name_ru
+
+
+class ClassroomEquipment(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='equipment', verbose_name=_("Аудитория"))
+    
+    name_ru = models.CharField(max_length=200, verbose_name=_("Название оборудования (рус)"))
+    name_kg = models.CharField(max_length=200, verbose_name=_("Название оборудования (кырг)"))
+    name_en = models.CharField(max_length=200, verbose_name=_("Название оборудования (англ)"))
+    
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
+
+    class Meta:
+        ordering = ['order', 'name_ru']
+        verbose_name = _("Оборудование аудитории")
+        verbose_name_plural = _("Оборудование аудиторий")
+
+    def __str__(self):
+        return f"{self.classroom.name_ru} - {self.name_ru}"
+
+
+class ClassroomFeature(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='features', verbose_name=_("Аудитория"))
+    
+    name_ru = models.CharField(max_length=200, verbose_name=_("Название особенности (рус)"))
+    name_kg = models.CharField(max_length=200, verbose_name=_("Название особенности (кырг)"))
+    name_en = models.CharField(max_length=200, verbose_name=_("Название особенности (англ)"))
+    
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
+
+    class Meta:
+        ordering = ['order', 'name_ru']
+        verbose_name = _("Особенность аудитории")
+        verbose_name_plural = _("Особенности аудиторий")
+
+    def __str__(self):
+        return f"{self.classroom.name_ru} - {self.name_ru}"
+
+
+# === STARTUP MODELS ===
+
+class StartupCategory(models.Model):
+    name_ru = models.CharField(max_length=100, verbose_name=_("Название (рус)"))
+    name_kg = models.CharField(max_length=100, verbose_name=_("Название (кырг)"))
+    name_en = models.CharField(max_length=100, verbose_name=_("Название (англ)"))
+    
+    icon = models.CharField(max_length=10, default='🚀', verbose_name=_("Иконка"))
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
+
+    class Meta:
+        ordering = ['order', 'name_ru']
+        verbose_name = _("Категория стартапа")
+        verbose_name_plural = _("Категории стартапов")
+
+    def __str__(self):
+        return self.name_ru
+
+
+class Startup(models.Model):
+    STAGE_CHOICES = [
+        ('seed', _('Посевная стадия')),
+        ('series_a', _('Серия A')),
+        ('growth', _('Рост')),
+        ('research', _('Исследования')),
+        ('prototype', _('Прототип')),
+        ('scaling', _('Масштабирование')),
+    ]
+    
+    STATUS_CHOICES = [
+        ('active', _('Активный')),
+        ('development', _('В разработке')),
+        ('scaling', _('Масштабирование')),
+        ('research', _('Исследования')),
+        ('prototype', _('Прототип')),
+    ]
+    
+    category = models.ForeignKey(StartupCategory, on_delete=models.CASCADE, related_name='startups', verbose_name=_("Категория"))
+    
+    name_ru = models.CharField(max_length=200, verbose_name=_("Название (рус)"))
+    name_kg = models.CharField(max_length=200, verbose_name=_("Название (кырг)"))
+    name_en = models.CharField(max_length=200, verbose_name=_("Название (англ)"))
+    
+    description_ru = models.TextField(verbose_name=_("Краткое описание (рус)"))
+    description_kg = models.TextField(verbose_name=_("Краткое описание (кырг)"))
+    description_en = models.TextField(verbose_name=_("Краткое описание (англ)"))
+    
+    full_description_ru = models.TextField(verbose_name=_("Полное описание (рус)"))
+    full_description_kg = models.TextField(verbose_name=_("Полное описание (кырг)"))
+    full_description_en = models.TextField(verbose_name=_("Полное описание (англ)"))
+    
+    stage = models.CharField(max_length=20, choices=STAGE_CHOICES, verbose_name=_("Стадия"))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, verbose_name=_("Статус"))
+    
+    funding = models.CharField(max_length=50, verbose_name=_("Финансирование"))
+    year = models.CharField(max_length=4, verbose_name=_("Год основания"))
+    
+    image = models.CharField(max_length=10, default='🚀', verbose_name=_("Эмодзи"))
+    
+    is_active = models.BooleanField(default=True, verbose_name=_("Активный"))
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+
+    class Meta:
+        ordering = ['order', 'name_ru']
+        verbose_name = _("Стартап")
+        verbose_name_plural = _("Стартапы")
+
+    def __str__(self):
+        return self.name_ru
+
+
+class StartupTeamMember(models.Model):
+    startup = models.ForeignKey(Startup, on_delete=models.CASCADE, related_name='team_members', verbose_name=_("Стартап"))
+    
+    name_ru = models.CharField(max_length=200, verbose_name=_("Имя участника (рус)"))
+    name_kg = models.CharField(max_length=200, verbose_name=_("Имя участника (кырг)"))
+    name_en = models.CharField(max_length=200, verbose_name=_("Имя участника (англ)"))
+    
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
+
+    class Meta:
+        ordering = ['order', 'name_ru']
+        verbose_name = _("Участник команды")
+        verbose_name_plural = _("Участники команды")
+
+    def __str__(self):
+        return f"{self.startup.name_ru} - {self.name_ru}"
+
+
+class StartupInvestor(models.Model):
+    startup = models.ForeignKey(Startup, on_delete=models.CASCADE, related_name='investors', verbose_name=_("Стартап"))
+    
+    name_ru = models.CharField(max_length=200, verbose_name=_("Название инвестора (рус)"))
+    name_kg = models.CharField(max_length=200, verbose_name=_("Название инвестора (кырг)"))
+    name_en = models.CharField(max_length=200, verbose_name=_("Название инвестора (англ)"))
+    
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
+
+    class Meta:
+        ordering = ['order', 'name_ru']
+        verbose_name = _("Инвестор")
+        verbose_name_plural = _("Инвесторы")
+
+    def __str__(self):
+        return f"{self.startup.name_ru} - {self.name_ru}"
+
+
+class StartupAchievement(models.Model):
+    startup = models.ForeignKey(Startup, on_delete=models.CASCADE, related_name='achievements', verbose_name=_("Стартап"))
+    
+    achievement_ru = models.CharField(max_length=300, verbose_name=_("Достижение (рус)"))
+    achievement_kg = models.CharField(max_length=300, verbose_name=_("Достижение (кырг)"))
+    achievement_en = models.CharField(max_length=300, verbose_name=_("Достижение (англ)"))
+    
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
+
+    class Meta:
+        ordering = ['order', 'achievement_ru']
+        verbose_name = _("Достижение стартапа")
+        verbose_name_plural = _("Достижения стартапов")
+
+    def __str__(self):
+        return f"{self.startup.name_ru} - {self.achievement_ru[:50]}..."
