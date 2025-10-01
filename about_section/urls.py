@@ -16,10 +16,9 @@ urlpatterns = [
     # Combined endpoint for frontend
     path('about-with-partners/', views.about_section_with_partners, name='about-with-partners'),
     
-    # Founders endpoints
-    path('founders/', views.FounderListView.as_view(), name='founder-list'),
-    path('founders/<int:id>/', views.FounderDetailView.as_view(), name='founder-detail'),
-    path('founders/frontend/', views.founders_for_frontend, name='founders-frontend'),
+    # University Founders endpoints
+    path('university-founders/', views.UniversityFounderListView.as_view(), name='university-founder-list'),
+    path('university-founders/<int:id>/', views.UniversityFounderDetailView.as_view(), name='university-founder-detail'),
     
     # Organization structure endpoints
     path('structure/', views.OrganizationStructureListView.as_view(), name='structure-list'),

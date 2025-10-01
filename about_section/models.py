@@ -415,211 +415,6 @@ class AboutSection(models.Model):
         return self.content
 
 
-class Founder(models.Model):
-    """Model for university founders"""
-    
-    name_ru = models.CharField(
-        max_length=200,
-        verbose_name='Имя (Русский)',
-        help_text='Полное имя основателя на русском языке'
-    )
-    
-    name_en = models.CharField(
-        max_length=200,
-        verbose_name='Name (English)',
-        help_text='Full name in English',
-        blank=True
-    )
-    
-    name_ky = models.CharField(
-        max_length=200,
-        verbose_name='Аты (Кыргызча)',
-        help_text='Full name in Kyrgyz',
-        blank=True
-    )
-    
-    position_ru = models.CharField(
-        max_length=300,
-        verbose_name='Должность (Русский)',
-        help_text='Должность основателя на русском языке'
-    )
-    
-    position_en = models.CharField(
-        max_length=300,
-        verbose_name='Position (English)',
-        help_text='Position in English',
-        blank=True
-    )
-    
-    position_ky = models.CharField(
-        max_length=300,
-        verbose_name='Кызматы (Кыргызча)',
-        help_text='Position in Kyrgyz',
-        blank=True
-    )
-    
-    years = models.CharField(
-        max_length=50,
-        verbose_name='Период деятельности',
-        help_text='Например: 1995-2005',
-        blank=True
-    )
-    
-    image = models.ImageField(
-        upload_to='founders/',
-        verbose_name='Фотография',
-        help_text='Фотография основателя',
-        blank=True,
-        null=True
-    )
-    
-    description_ru = models.TextField(
-        verbose_name='Описание (Русский)',
-        help_text='Биография основателя на русском языке'
-    )
-    
-    description_en = models.TextField(
-        verbose_name='Description (English)',
-        help_text='Biography in English',
-        blank=True
-    )
-    
-    description_ky = models.TextField(
-        verbose_name='Сүрөттөмө (Кыргызча)',
-        help_text='Biography in Kyrgyz',
-        blank=True
-    )
-    
-    achievements = models.JSONField(
-        default=list,
-        verbose_name='Достижения',
-        help_text='JSON структура с достижениями на разных языках',
-        blank=True
-    )
-    
-    order = models.PositiveIntegerField(
-        default=1,
-        verbose_name='Порядок сортировки',
-        help_text='Порядок отображения основателей'
-    )
-    
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Активен',
-        help_text='Отображать основателя на сайте'
-    )
-    
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата создания'
-    )
-    
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Дата обновления'
-    )
-    
-    class Meta:
-        verbose_name = 'Основатель'
-        verbose_name_plural = 'Основатели'
-        ordering = ['order', 'name_ru']
-        
-    def __str__(self):
-        return self.name_ru
-    
-    def get_display_name(self, language='ru'):
-        """Get name in specified language"""
-        if language == 'en' and self.name_en:
-            return self.name_en
-        elif language == 'ky' and self.name_ky:
-            return self.name_ky
-        return self.name_ru
-    
-    def get_display_position(self, language='ru'):
-        """Get position in specified language"""
-        if language == 'en' and self.position_en:
-            return self.position_en
-        elif language == 'ky' and self.position_ky:
-            return self.position_ky
-        return self.position_ru
-    
-    def get_display_description(self, language='ru'):
-        """Get description in specified language"""
-        if language == 'en' and self.description_en:
-            return self.description_en
-        elif language == 'ky' and self.description_ky:
-            return self.description_ky
-        return self.description_ru
-    
-    def get_achievements_for_language(self, language='ru'):
-        """Get achievements for specified language"""
-        if not self.achievements:
-            return []
-        
-        # If achievements is a list of dictionaries with language keys
-        if isinstance(self.achievements, list) and self.achievements:
-            if isinstance(self.achievements[0], dict):
-                return [
-                    achievement.get(f'achievement_{language}', 
-                                    achievement.get('achievement_ru', ''))
-                    for achievement in self.achievements
-                ]
-            else:
-                # If it's a simple list of strings (legacy format)
-                return self.achievements
-        
-        return []
-
-
-class FounderAchievement(models.Model):
-    """Model for individual founder achievements"""
-    
-    founder = models.ForeignKey(
-        Founder,
-        on_delete=models.CASCADE,
-        related_name='achievement_set',
-        verbose_name='Основатель'
-    )
-    
-    achievement_ru = models.TextField(
-        verbose_name='Достижение (Русский)',
-        help_text='Описание достижения на русском языке'
-    )
-    
-    achievement_en = models.TextField(
-        verbose_name='Achievement (English)',
-        help_text='Achievement description in English',
-        blank=True
-    )
-    
-    achievement_ky = models.TextField(
-        verbose_name='Жетишкендик (Кыргызча)',
-        help_text='Achievement description in Kyrgyz',
-        blank=True
-    )
-    
-    order = models.PositiveIntegerField(
-        default=1,
-        verbose_name='Порядок сортировки'
-    )
-    
-    class Meta:
-        verbose_name = 'Достижение основателя'
-        verbose_name_plural = 'Достижения основателей'
-        ordering = ['order']
-    
-    def __str__(self):
-        return f"{self.founder.name_ru} - {self.achievement_ru[:50]}..."
-    
-    def get_display_achievement(self, language='ru'):
-        """Get achievement in specified language"""
-        if language == 'en' and self.achievement_en:
-            return self.achievement_en
-        elif language == 'ky' and self.achievement_ky:
-            return self.achievement_ky
-        return self.achievement_ru
-
-
 class OrganizationStructure(models.Model):
     """Model for university organizational structure"""
     
@@ -972,3 +767,193 @@ class UniversityStatistic(models.Model):
         elif language == 'ky' and self.name_ky:
             return self.name_ky
         return self.name_ru
+
+
+class UniversityFounder(models.Model):
+    """Model for university founders"""
+    
+    # Name fields (multilingual)
+    name_ru = models.CharField(
+        max_length=200,
+        verbose_name='Имя (Русский)',
+        help_text='Полное имя основателя на русском языке'
+    )
+    
+    name_en = models.CharField(
+        max_length=200,
+        verbose_name='Name (English)',
+        help_text='Full name in English',
+        blank=True
+    )
+    
+    name_ky = models.CharField(
+        max_length=200,
+        verbose_name='Аты (Кыргызча)',
+        help_text='Full name in Kyrgyz',
+        blank=True
+    )
+    
+    # Position fields (multilingual)
+    position_ru = models.CharField(
+        max_length=300,
+        verbose_name='Должность (Русский)',
+        help_text='Должность основателя на русском языке'
+    )
+    
+    position_en = models.CharField(
+        max_length=300,
+        verbose_name='Position (English)',
+        help_text='Position in English',
+        blank=True
+    )
+    
+    position_ky = models.CharField(
+        max_length=300,
+        verbose_name='Кызмат орду (Кыргызча)',
+        help_text='Position in Kyrgyz',
+        blank=True
+    )
+    
+    # Years of service
+    years_ru = models.CharField(
+        max_length=100,
+        verbose_name='Годы службы (Русский)',
+        help_text='Период работы на русском языке (например: 1995-2010)',
+        blank=True
+    )
+    
+    years_en = models.CharField(
+        max_length=100,
+        verbose_name='Years of Service (English)',
+        help_text='Period of service in English',
+        blank=True
+    )
+    
+    years_ky = models.CharField(
+        max_length=100,
+        verbose_name='Кызмат жылдары (Кыргызча)',
+        help_text='Service period in Kyrgyz',
+        blank=True
+    )
+    
+    # Image
+    image = models.ImageField(
+        upload_to='founders/',
+        verbose_name='Фотография',
+        help_text='Фотография основателя',
+        blank=True,
+        null=True
+    )
+    
+    # Description fields (multilingual)
+    description_ru = models.TextField(
+        verbose_name='Описание (Русский)',
+        help_text='Подробное описание основателя на русском языке'
+    )
+    
+    description_en = models.TextField(
+        verbose_name='Description (English)',
+        help_text='Detailed description in English',
+        blank=True
+    )
+    
+    description_ky = models.TextField(
+        verbose_name='Сүрөттөө (Кыргызча)',
+        help_text='Detailed description in Kyrgyz',
+        blank=True
+    )
+    
+    # Achievements (JSON field for multilingual support)
+    achievements_ru = models.JSONField(
+        verbose_name='Достижения (Русский)',
+        help_text='Список достижений на русском языке (JSON массив)',
+        default=list,
+        blank=True
+    )
+    
+    achievements_en = models.JSONField(
+        verbose_name='Achievements (English)',
+        help_text='List of achievements in English (JSON array)',
+        default=list,
+        blank=True
+    )
+    
+    achievements_ky = models.JSONField(
+        verbose_name='Жетишкендиктер (Кыргызча)',
+        help_text='List of achievements in Kyrgyz (JSON array)',
+        default=list,
+        blank=True
+    )
+    
+    # Order for sorting
+    order = models.PositiveIntegerField(
+        verbose_name='Порядок',
+        help_text='Порядок отображения (чем меньше число, тем выше)',
+        default=0
+    )
+    
+    # Status
+    is_active = models.BooleanField(
+        verbose_name='Активен',
+        help_text='Отображать основателя на сайте',
+        default=True
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата создания'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Дата обновления'
+    )
+    
+    class Meta:
+        verbose_name = 'Основатель университета'
+        verbose_name_plural = 'Основатели университета'
+        ordering = ['order', 'name_ru']
+        
+    def __str__(self):
+        return self.name_ru
+    
+    def get_name(self, language='ru'):
+        """Get name in specified language"""
+        if language == 'en' and self.name_en:
+            return self.name_en
+        elif language == 'ky' and self.name_ky:
+            return self.name_ky
+        return self.name_ru
+    
+    def get_position(self, language='ru'):
+        """Get position in specified language"""
+        if language == 'en' and self.position_en:
+            return self.position_en
+        elif language == 'ky' and self.position_ky:
+            return self.position_ky
+        return self.position_ru
+    
+    def get_years(self, language='ru'):
+        """Get years in specified language"""
+        if language == 'en' and self.years_en:
+            return self.years_en
+        elif language == 'ky' and self.years_ky:
+            return self.years_ky
+        return self.years_ru
+    
+    def get_description(self, language='ru'):
+        """Get description in specified language"""
+        if language == 'en' and self.description_en:
+            return self.description_en
+        elif language == 'ky' and self.description_ky:
+            return self.description_ky
+        return self.description_ru
+    
+    def get_achievements(self, language='ru'):
+        """Get achievements in specified language"""
+        if language == 'en' and self.achievements_en:
+            return self.achievements_en
+        elif language == 'ky' and self.achievements_ky:
+            return self.achievements_ky
+        return self.achievements_ru

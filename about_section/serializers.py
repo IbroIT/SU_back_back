@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
-    Partner, AboutSection, Founder, FounderAchievement,
-    OrganizationStructure, Achievement, UniversityStatistic
+    Partner, AboutSection,
+    OrganizationStructure, Achievement, UniversityStatistic, UniversityFounder
 )
 
 
@@ -243,109 +243,6 @@ class AboutSectionWithPartnersSerializer(AboutSectionSerializer):
         return []
 
 
-class FounderAchievementSerializer(serializers.ModelSerializer):
-    """Serializer for FounderAchievement model"""
-    
-    achievement = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = FounderAchievement
-        fields = ['id', 'achievement', 'order', 'achievement_ru', 'achievement_en', 'achievement_ky']
-    
-    def get_achievement(self, obj):
-        """Get achievement in request language"""
-        request = self.context.get('request')
-        language = self._get_language(request)
-        return obj.get_display_achievement(language)
-    
-    def _get_language(self, request):
-        """Extract language from request"""
-        language = 'ru'
-        if request:
-            language = request.GET.get('lang', 'ru')
-            if not request.GET.get('lang'):
-                accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
-                if 'en' in accept_language:
-                    language = 'en'
-                elif 'ky' in accept_language:
-                    language = 'ky'
-        return language
-
-
-class FounderSerializer(serializers.ModelSerializer):
-    """Serializer for Founder model with multilingual support"""
-    
-    name = serializers.SerializerMethodField()
-    position = serializers.SerializerMethodField()
-    description = serializers.SerializerMethodField()
-    achievements = serializers.SerializerMethodField()
-    image_url = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = Founder
-        fields = [
-            'id', 'name', 'name_ru', 'name_en', 'name_ky',
-            'position', 'position_ru', 'position_en', 'position_ky',
-            'years', 'image', 'image_url',
-            'description', 'description_ru', 'description_en', 'description_ky',
-            'achievements', 'order', 'is_active'
-        ]
-        read_only_fields = ['id', 'name', 'position', 'description', 'achievements', 'image_url']
-    
-    def get_name(self, obj):
-        """Get name in request language"""
-        request = self.context.get('request')
-        language = self._get_language(request)
-        return obj.get_display_name(language)
-    
-    def get_position(self, obj):
-        """Get position in request language"""
-        request = self.context.get('request')
-        language = self._get_language(request)
-        return obj.get_display_position(language)
-    
-    def get_description(self, obj):
-        """Get description in request language"""
-        request = self.context.get('request')
-        language = self._get_language(request)
-        return obj.get_display_description(language)
-    
-    def get_achievements(self, obj):
-        """Get achievements in request language"""
-        request = self.context.get('request')
-        language = self._get_language(request)
-        
-        # First try to get from related achievement objects
-        achievement_objects = obj.achievement_set.all().order_by('order')
-        if achievement_objects.exists():
-            return [ach.get_display_achievement(language) for ach in achievement_objects]
-        
-        # Fallback to JSON field
-        return obj.get_achievements_for_language(language)
-    
-    def get_image_url(self, obj):
-        """Get full URL for image"""
-        if obj.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
-        return None
-    
-    def _get_language(self, request):
-        """Extract language from request"""
-        language = 'ru'
-        if request:
-            language = request.GET.get('lang', 'ru')
-            if not request.GET.get('lang'):
-                accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
-                if 'en' in accept_language:
-                    language = 'en'
-                elif 'ky' in accept_language:
-                    language = 'ky'
-        return language
-
-
 class OrganizationStructureSerializer(serializers.ModelSerializer):
     """Serializer for OrganizationStructure model with multilingual support"""
     
@@ -478,4 +375,137 @@ class UniversityStatisticSerializer(serializers.ModelSerializer):
                     language = 'en'
                 elif 'ky' in accept_language:
                     language = 'ky'
+        return language
+class UniversityFounderSerializer(serializers.ModelSerializer):
+    """Serializer for UniversityFounder model with multilingual support"""
+    
+    # Computed fields for frontend compatibility
+    name = serializers.SerializerMethodField()
+    position = serializers.SerializerMethodField()
+    years = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    achievements = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UniversityFounder
+        fields = [
+            'id', 'name', 'position', 'years', 'image', 'description', 'achievements',
+            'name_ru', 'name_en', 'name_ky',
+            'position_ru', 'position_en', 'position_ky',
+            'years_ru', 'years_en', 'years_ky',
+            'description_ru', 'description_en', 'description_ky',
+            'achievements_ru', 'achievements_en', 'achievements_ky',
+            'is_active', 'order', 'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'created_at', 'updated_at', 'name', 'position', 'years', 
+            'description', 'achievements'
+        ]
+    
+    def get_name(self, obj):
+        """Get name based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_name(language)
+    
+    def get_position(self, obj):
+        """Get position based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_position(language)
+    
+    def get_years(self, obj):
+        """Get years based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_years(language)
+    
+    def get_description(self, obj):
+        """Get description based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_description(language)
+    
+    def get_achievements(self, obj):
+        """Get achievements based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_achievements(language)
+    
+    def _get_language(self, request):
+        """Extract language from request"""
+        language = 'ru'  # default
+        
+        if request:
+            language = request.GET.get('lang', 'ru')
+            # Also check Accept-Language header
+            if not request.GET.get('lang'):
+                accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+                if 'en' in accept_language:
+                    language = 'en'
+                elif 'ky' in accept_language:
+                    language = 'ky'
+        
+        return language
+
+
+class UniversityFounderListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for founder list views"""
+    
+    name = serializers.SerializerMethodField()
+    position = serializers.SerializerMethodField()
+    years = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    achievements = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UniversityFounder
+        fields = [
+            'id', 'name', 'position', 'years', 'image', 
+            'description', 'achievements', 'order'
+        ]
+    
+    def get_name(self, obj):
+        """Get name based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_name(language)
+    
+    def get_position(self, obj):
+        """Get position based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_position(language)
+    
+    def get_years(self, obj):
+        """Get years based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_years(language)
+    
+    def get_description(self, obj):
+        """Get description based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_description(language)
+    
+    def get_achievements(self, obj):
+        """Get achievements based on request language"""
+        request = self.context.get('request')
+        language = self._get_language(request)
+        return obj.get_achievements(language)
+    
+    def _get_language(self, request):
+        """Extract language from request"""
+        language = 'ru'  # default
+        
+        if request:
+            language = request.GET.get('lang', 'ru')
+            if not request.GET.get('lang'):
+                accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+                if 'en' in accept_language:
+                    language = 'en'
+                elif 'ky' in accept_language:
+                    language = 'ky'
+        
         return language

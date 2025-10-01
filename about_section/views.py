@@ -6,18 +6,19 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
-    Partner, AboutSection, Founder, FounderAchievement, 
-    OrganizationStructure, Achievement, UniversityStatistic
+    Partner, AboutSection, 
+    OrganizationStructure, Achievement, UniversityStatistic, UniversityFounder
 )
 from .serializers import (
     PartnerSerializer, 
     PartnerListSerializer, 
     AboutSectionSerializer, 
     AboutSectionWithPartnersSerializer,
-    FounderSerializer,
     OrganizationStructureSerializer,
     AchievementSerializer,
-    UniversityStatisticSerializer
+    UniversityStatisticSerializer,
+    UniversityFounderSerializer,
+    UniversityFounderListSerializer
 )
 
 
@@ -228,94 +229,6 @@ def partners_stats(request):
         return Response({
             'success': False,
             'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-# Founders Views
-class FounderListView(generics.ListAPIView):
-    """
-    Get list of active founders with multilingual support
-    """
-    queryset = Founder.objects.filter(is_active=True)
-    serializer_class = FounderSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['is_active']
-    ordering_fields = ['order', 'name_ru']
-    ordering = ['order', 'name_ru']
-
-
-class FounderDetailView(generics.RetrieveAPIView):
-    """
-    Get detailed information about a specific founder
-    """
-    queryset = Founder.objects.filter(is_active=True)
-    serializer_class = FounderSerializer
-    lookup_field = 'id'
-
-
-@api_view(['GET'])
-def founders_for_frontend(request):
-    """
-    API endpoint optimized for the frontend Founders component
-    Returns founders data in the exact format expected by the React component
-    """
-    try:
-        # Get active founders ordered by order field
-        founders = Founder.objects.filter(is_active=True).order_by('order', 'name_ru')
-        
-        # Get language from request
-        language = request.GET.get('lang', 'ru')
-        if not language:
-            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
-            if 'en' in accept_language:
-                language = 'en'
-            elif 'ky' in accept_language:
-                language = 'ky'
-        
-        # Format data for frontend
-        founders_data = []
-        for founder in founders:
-            # Get achievements for this language
-            achievements = []
-            achievement_objects = founder.achievement_set.all().order_by('order')
-            if achievement_objects.exists():
-                achievements = [ach.get_display_achievement(language) for ach in achievement_objects]
-            else:
-                achievements = founder.get_achievements_for_language(language)
-            
-            # Get image URL
-            image_url = None
-            if founder.image:
-                image_url = request.build_absolute_uri(founder.image.url)
-            else:
-                # Fallback to placeholder
-                image_url = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face"
-            
-            founder_data = {
-                'id': founder.id,
-                'name': founder.get_display_name(language),
-                'position': founder.get_display_position(language),
-                'years': founder.years,
-                'image': image_url,
-                'description': founder.get_display_description(language),
-                'achievements': achievements
-            }
-            
-            founders_data.append(founder_data)
-        
-        return Response({
-            'success': True,
-            'results': founders_data,
-            'count': len(founders_data),
-            'language': language
-        })
-        
-    except Exception as e:
-        print(f"Error in founders_for_frontend: {str(e)}")
-        return Response({
-            'success': False,
-            'error': str(e),
-            'results': []
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -549,6 +462,78 @@ def statistics_for_frontend(request):
         
     except Exception as e:
         print(f"Error in statistics_for_frontend: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'data': []
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class UniversityFounderListView(generics.ListAPIView):
+    """
+    Get list of active university founders
+    Supports filtering and ordering
+    """
+    queryset = UniversityFounder.objects.filter(is_active=True)
+    serializer_class = UniversityFounderListSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active']
+    search_fields = ['name_ru', 'name_en', 'name_ky', 'position_ru', 'description_ru']
+    ordering_fields = ['order', 'name_ru', 'created_at']
+    ordering = ['order', 'name_ru']
+
+
+class UniversityFounderDetailView(generics.RetrieveAPIView):
+    """
+    Get detailed information about a specific university founder
+    """
+    queryset = UniversityFounder.objects.filter(is_active=True)
+    serializer_class = UniversityFounderSerializer
+    lookup_field = 'id'
+
+
+@api_view(['GET'])
+def founders_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Founders component
+    Returns founders data in the exact format expected by the React component
+    """
+    try:
+        # Get active founders ordered by order field
+        founders = UniversityFounder.objects.filter(is_active=True).order_by('order', 'name_ru')
+        
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Format data for frontend
+        founders_data = []
+        for founder in founders:
+            founder_data = {
+                'id': founder.id,
+                'name': founder.get_name(language),
+                'position': founder.get_position(language),
+                'years': founder.get_years(language),
+                'image': founder.image.url if founder.image else "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face",
+                'description': founder.get_description(language),
+                'achievements': founder.get_achievements(language),
+                'order': founder.order
+            }
+            founders_data.append(founder_data)
+        
+        return Response({
+            'success': True,
+            'count': len(founders_data),
+            'data': founders_data
+        })
+        
+    except Exception as e:
+        print(f"Error in founders_for_frontend: {str(e)}")
         return Response({
             'success': False,
             'error': str(e),

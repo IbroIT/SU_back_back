@@ -65,6 +65,8 @@ INSTALLED_APPS = [
     'student_life',  # Приложение студенческой жизни
     'media_coverage',  # Приложение медиа-покрытия
     'about_section',  # Секция "О нас" и партнеры
+    'social_opportunities',  # Приложение социальных возможностей
+    'mission_section.apps.MissionSectionConfig',  # Приложение секции миссии
 ]
 
 MIDDLEWARE = [

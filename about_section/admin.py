@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import (
-    Partner, AboutSection, Founder, FounderAchievement, 
-    OrganizationStructure, Achievement, UniversityStatistic
+    Partner, AboutSection, 
+    OrganizationStructure, Achievement, UniversityStatistic, UniversityFounder
 )
 
 
@@ -136,69 +136,6 @@ class AboutSectionAdmin(admin.ModelAdmin):
 admin.site.site_header = 'Администрирование СалымБеков Университета'
 admin.site.site_title = 'СалымБеков Админ'
 admin.site.index_title = 'Управление контентом'
-
-
-# Founder Achievement Inline
-class FounderAchievementInline(admin.TabularInline):
-    """Inline admin for FounderAchievement"""
-    model = FounderAchievement
-    extra = 1
-    fields = ['achievement_ru', 'achievement_en', 'achievement_ky', 'order']
-    classes = ['collapse']
-
-
-@admin.register(Founder)
-class FounderAdmin(admin.ModelAdmin):
-    """Admin interface for Founder model"""
-    
-    list_display = [
-        'name_ru', 'position_ru', 'years', 'image_display', 
-        'achievements_count', 'is_active', 'order', 'created_at'
-    ]
-    list_filter = ['is_active', 'created_at', 'years']
-    search_fields = ['name_ru', 'name_en', 'name_ky', 'position_ru', 'position_en', 'position_ky']
-    ordering = ['order', 'name_ru']
-    list_editable = ['is_active', 'order']
-    inlines = [FounderAchievementInline]
-    
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('name_ru', 'position_ru', 'years', 'image', 'is_active', 'order')
-        }),
-        ('Переводы имени и должности', {
-            'fields': ('name_en', 'name_ky', 'position_en', 'position_ky'),
-            'classes': ('collapse',)
-        }),
-        ('Биография', {
-            'fields': ('description_ru',),
-        }),
-        ('Переводы биографии', {
-            'fields': ('description_en', 'description_ky'),
-            'classes': ('collapse',)
-        }),
-        ('JSON Достижения (устаревший формат)', {
-            'fields': ('achievements',),
-            'classes': ('collapse',),
-            'description': 'Используйте блок "Достижения основателей" ниже вместо этого поля'
-        }),
-    )
-    
-    def image_display(self, obj):
-        """Display image thumbnail in admin list"""
-        if obj.image:
-            return format_html('<img src="{}" width="40" height="40" style="border-radius: 50%;" />', obj.image.url)
-        return '-'
-    image_display.short_description = 'Фото'
-    
-    def achievements_count(self, obj):
-        """Display count of achievements"""
-        count = obj.achievement_set.count()
-        if count > 0:
-            return f'{count} достижений'
-        elif obj.achievements:  # Check JSON field
-            return f'{len(obj.achievements)} достижений (JSON)'
-        return 'Нет достижений'
-    achievements_count.short_description = 'Достижения'
 
 
 @admin.register(OrganizationStructure)
@@ -338,3 +275,64 @@ class UniversityStatisticAdmin(admin.ModelAdmin):
             return format_html('<span style="font-size: 20px;">{}</span>', obj.icon)
         return '-'
     icon_display.short_description = 'Иконка'
+
+
+@admin.register(UniversityFounder)
+class UniversityFounderAdmin(admin.ModelAdmin):
+    """Admin interface for UniversityFounder model"""
+    
+    list_display = [
+        'name_ru', 'position_ru', 'years_ru', 'image_preview',
+        'is_active', 'order', 'created_at'
+    ]
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['name_ru', 'name_en', 'name_ky', 'position_ru', 'description_ru']
+    ordering = ['order', 'name_ru']
+    list_editable = ['is_active', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name_ru', 'position_ru', 'years_ru', 'image', 'is_active', 'order')
+        }),
+        ('Переводы имени', {
+            'fields': ('name_en', 'name_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Переводы должности', {
+            'fields': ('position_en', 'position_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Переводы лет службы', {
+            'fields': ('years_en', 'years_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Описание (Русский)', {
+            'fields': ('description_ru',),
+        }),
+        ('Переводы описания', {
+            'fields': ('description_en', 'description_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Достижения (Русский)', {
+            'fields': ('achievements_ru',),
+            'description': 'Введите достижения в формате JSON массива, например: ["Достижение 1", "Достижение 2"]'
+        }),
+        ('Переводы достижений', {
+            'fields': ('achievements_en', 'achievements_ky'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def image_preview(self, obj):
+        """Display image preview in admin list"""
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%;" />',
+                obj.image.url
+            )
+        return '-'
+    image_preview.short_description = 'Фото'
+    
+    def get_queryset(self, request):
+        """Optimize queries for list display"""
+        return super().get_queryset(request).select_related()
