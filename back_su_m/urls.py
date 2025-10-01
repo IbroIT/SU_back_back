@@ -18,6 +18,8 @@ urlpatterns = [
     path('api/media-coverage/', include('media_coverage.urls')),  # Media Coverage API endpoints
     path('api/', include('hsm.urls')),  # HSM API endpoints
     path('api/about-section/', include('about_section.urls')),  # About Section and Partners API endpoints
+    path('api/mission/', include('mission_section.urls')),  # Mission Section API endpoints
+    path('', include('social_opportunities.urls')),  # Social Opportunities API endpoints
 ]
 
 # Serve media files during development

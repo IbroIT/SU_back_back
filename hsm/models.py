@@ -2,6 +2,88 @@ from django.db import models
 from django.utils import timezone
 
 
+class Leadership(models.Model):
+    """Руководство ВШМ"""
+    LEADERSHIP_TYPES = [
+        ('director', 'Директор'),
+        ('deputy_director', 'Заместитель директора'),
+        ('department_head', 'Заведующий кафедрой'),
+        ('dean', 'Декан'),
+        ('vice_dean', 'Заместитель декана'),
+    ]
+    
+    
+    # Имя
+    name = models.CharField(max_length=200, verbose_name="ФИО")
+    name_kg = models.CharField(max_length=200, verbose_name="ФИО (KG)", blank=True)
+    name_en = models.CharField(max_length=200, verbose_name="ФИО (EN)", blank=True)
+    
+    # Должность
+    position = models.CharField(max_length=200, verbose_name="Должность")
+    position_kg = models.CharField(max_length=200, verbose_name="Должность (KG)", blank=True)
+    position_en = models.CharField(max_length=200, verbose_name="Должность (EN)", blank=True)
+    
+    # Ученая степень
+    degree = models.CharField(max_length=200, verbose_name="Ученая степень")
+    degree_kg = models.CharField(max_length=200, verbose_name="Ученая степень (KG)", blank=True)
+    degree_en = models.CharField(max_length=200, verbose_name="Ученая степень (EN)", blank=True)
+    
+    # Опыт работы
+    experience = models.CharField(max_length=100, verbose_name="Опыт работы")
+    experience_kg = models.CharField(max_length=100, verbose_name="Опыт работы (KG)", blank=True)
+    experience_en = models.CharField(max_length=100, verbose_name="Опыт работы (EN)", blank=True)
+    
+    # Биография
+    bio = models.TextField(verbose_name="Биография", blank=True)
+    bio_kg = models.TextField(verbose_name="Биография (KG)", blank=True)
+    bio_en = models.TextField(verbose_name="Биография (EN)", blank=True)
+    
+    # Достижения (JSON поле для списка достижений)
+    achievements = models.JSONField(default=list, verbose_name="Достижения", blank=True)
+    achievements_kg = models.JSONField(default=list, verbose_name="Достижения (KG)", blank=True)
+    achievements_en = models.JSONField(default=list, verbose_name="Достижения (EN)", blank=True)
+    
+    # Департамент/кафедра
+    department = models.CharField(max_length=50,  verbose_name="Департамент(RU)", blank=True)
+    department_kg = models.CharField(max_length=200, verbose_name="Департамент (KG)", blank=True)
+    department_en = models.CharField(max_length=200, verbose_name="Департамент (EN)", blank=True)
+    
+    # Специализация (для заведующих кафедрами)
+    specialization = models.TextField(verbose_name="Специализация", blank=True)
+    specialization_kg = models.TextField(verbose_name="Специализация (KG)", blank=True)
+    specialization_en = models.TextField(verbose_name="Специализация (EN)", blank=True)
+    
+    # Количество сотрудников (для заведующих)
+    staff_count = models.CharField(max_length=100, verbose_name="Количество сотрудников", blank=True)
+    staff_count_kg = models.CharField(max_length=100, verbose_name="Количество сотрудников (KG)", blank=True)
+    staff_count_en = models.CharField(max_length=100, verbose_name="Количество сотрудников (EN)", blank=True)
+    
+    # Контакты
+    email = models.EmailField(verbose_name="Email", blank=True)
+    phone = models.CharField(max_length=20, verbose_name="Телефон", blank=True)
+    
+    # Фото
+    image = models.ImageField(upload_to='leadership/photos/', verbose_name="Фото", blank=True)
+    
+    # Тип руководства и статус директора
+    leadership_type = models.CharField(max_length=20, choices=LEADERSHIP_TYPES, verbose_name="Тип руководства")
+    is_director = models.BooleanField(default=False, verbose_name="Является директором")
+    
+    # Системные поля
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    order = models.IntegerField(default=0, verbose_name="Порядок отображения")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Руководитель"
+        verbose_name_plural = "Руководство"
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return f"{self.name} - {self.position}"
+
+
 class Faculty(models.Model):
     """Профессорско-преподавательский состав ВШМ"""
     ACADEMIC_DEGREES = [

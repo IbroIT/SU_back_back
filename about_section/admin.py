@@ -1,191 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Partner, AboutSection, Accreditation, CouncilType, CouncilMember, CouncilDocument
-
-
-@admin.register(Accreditation)
-class AccreditationAdmin(admin.ModelAdmin):
-    """Admin interface for Accreditation model"""
-    
-    list_display = [
-        'title', 'logo_display', 'year', 'accreditation_type', 
-        'status', 'is_active', 'order', 'color_preview'
-    ]
-    list_filter = ['accreditation_type', 'status', 'is_active', 'year']
-    search_fields = ['title', 'title_en', 'title_ky', 'description']
-    ordering = ['order', 'title']
-    list_editable = ['is_active', 'order']
-    
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('title', 'logo', 'year', 'accreditation_type', 'status', 'validity', 'level', 'is_active', 'order')
-        }),
-        ('Переводы основных полей', {
-            'fields': ('title_en', 'title_ky', 'status_en', 'status_ky', 'validity_en', 'validity_ky', 'level_en', 'level_ky'),
-            'classes': ('collapse',)
-        }),
-        ('Описания', {
-            'fields': ('description', 'full_description'),
-        }),
-        ('Переводы описаний', {
-            'fields': ('description_en', 'description_ky', 'full_description_en', 'full_description_ky'),
-            'classes': ('collapse',)
-        }),
-        ('Преимущества', {
-            'fields': ('benefits', 'benefits_en', 'benefits_ky'),
-            'description': 'Введите преимущества в формате JSON списка, например: ["Преимущество 1", "Преимущество 2"]'
-        }),
-        ('Внешний вид', {
-            'fields': ('color', 'icon_color', 'badge_color'),
-        }),
-    )
-    
-    def logo_display(self, obj):
-        """Display logo emoji in admin list"""
-        if obj.logo:
-            return format_html('<span style="font-size: 20px;">{}</span>', obj.logo)
-        return '-'
-    logo_display.short_description = 'Лого'
-    
-    def color_preview(self, obj):
-        """Display color preview in admin list"""
-        color_map = {
-            'from-blue-500 to-blue-600': 'linear-gradient(135deg, #3b82f6, #2563eb)',
-            'from-green-500 to-green-600': 'linear-gradient(135deg, #10b981, #059669)',
-            'from-purple-500 to-purple-600': 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-            'from-orange-500 to-orange-600': 'linear-gradient(135deg, #f97316, #ea580c)',
-            'from-teal-500 to-teal-600': 'linear-gradient(135deg, #14b8a6, #0d9488)',
-            'from-indigo-500 to-indigo-600': 'linear-gradient(135deg, #6366f1, #4f46e5)',
-        }
-        
-        gradient = color_map.get(obj.color, '#3b82f6')
-        return format_html(
-            '<div style="width: 30px; height: 20px; background: {}; border-radius: 4px; border: 1px solid #ddd;"></div>',
-            gradient
-        )
-    color_preview.short_description = 'Цвет'
-
-
-@admin.register(CouncilType)
-class CouncilTypeAdmin(admin.ModelAdmin):
-    """Admin interface for CouncilType model"""
-    
-    list_display = ['name', 'slug', 'members_count', 'documents_count', 'is_active', 'order']
-    list_filter = ['is_active']
-    search_fields = ['name', 'name_en', 'name_ky', 'description']
-    ordering = ['order', 'name']
-    list_editable = ['is_active', 'order']
-    prepopulated_fields = {'slug': ('name',)}
-    
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('name', 'slug', 'is_active', 'order')
-        }),
-        ('Переводы названия', {
-            'fields': ('name_en', 'name_ky'),
-            'classes': ('collapse',)
-        }),
-        ('Описание', {
-            'fields': ('description',),
-        }),
-        ('Переводы описания', {
-            'fields': ('description_en', 'description_ky'),
-            'classes': ('collapse',)
-        }),
-    )
-    
-    def members_count(self, obj):
-        """Count of active members"""
-        return obj.members.filter(is_active=True).count()
-    members_count.short_description = 'Члены'
-    
-    def documents_count(self, obj):
-        """Count of active documents"""
-        return obj.documents.filter(is_active=True).count()
-    documents_count.short_description = 'Документы'
-
-
-class CouncilMemberInline(admin.TabularInline):
-    """Inline admin for CouncilMember"""
-    model = CouncilMember
-    extra = 1
-    fields = ['name', 'position', 'department', 'email', 'phone', 'is_active', 'order']
-
-
-class CouncilDocumentInline(admin.TabularInline):
-    """Inline admin for CouncilDocument"""
-    model = CouncilDocument
-    extra = 1
-    fields = ['title', 'file', 'date', 'is_active', 'order']
-
-
-@admin.register(CouncilMember)
-class CouncilMemberAdmin(admin.ModelAdmin):
-    """Admin interface for CouncilMember model"""
-    
-    list_display = ['name', 'position', 'council_type', 'department', 'has_photo', 'is_active', 'order']
-    list_filter = ['council_type', 'is_active']
-    search_fields = ['name', 'position', 'department', 'bio']
-    ordering = ['council_type', 'order', 'name']
-    list_editable = ['is_active', 'order']
-    
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('council_type', 'name', 'photo', 'email', 'phone', 'is_active', 'order')
-        }),
-        ('Переводы ФИО', {
-            'fields': ('name_en', 'name_ky'),
-            'classes': ('collapse',)
-        }),
-        ('Должность и подразделение', {
-            'fields': ('position', 'department'),
-        }),
-        ('Переводы должности и подразделения', {
-            'fields': ('position_en', 'position_ky', 'department_en', 'department_ky'),
-            'classes': ('collapse',)
-        }),
-        ('Биография', {
-            'fields': ('bio',),
-        }),
-        ('Переводы биографии', {
-            'fields': ('bio_en', 'bio_ky'),
-            'classes': ('collapse',)
-        }),
-    )
-    
-    def has_photo(self, obj):
-        """Check if member has photo"""
-        return bool(obj.photo)
-    has_photo.boolean = True
-    has_photo.short_description = 'Есть фото'
-
-
-@admin.register(CouncilDocument)
-class CouncilDocumentAdmin(admin.ModelAdmin):
-    """Admin interface for CouncilDocument model"""
-    
-    list_display = ['title', 'council_type', 'date', 'size', 'is_active', 'order']
-    list_filter = ['council_type', 'is_active', 'date']
-    search_fields = ['title', 'title_en', 'title_ky', 'description']
-    ordering = ['council_type', 'order', '-date']
-    list_editable = ['is_active', 'order']
-    
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('council_type', 'title', 'file', 'date', 'size', 'is_active', 'order')
-        }),
-        ('Переводы названия', {
-            'fields': ('title_en', 'title_ky'),
-            'classes': ('collapse',)
-        }),
-        ('Описание', {
-            'fields': ('description',),
-        }),
-        ('Переводы описания', {
-            'fields': ('description_en', 'description_ky'),
-            'classes': ('collapse',)
-        }),
-    )
+from .models import (
+    Partner, AboutSection, 
+    OrganizationStructure, Achievement, UniversityStatistic, UniversityFounder
+)
 
 
 @admin.register(Partner)
@@ -318,3 +136,203 @@ class AboutSectionAdmin(admin.ModelAdmin):
 admin.site.site_header = 'Администрирование СалымБеков Университета'
 admin.site.site_title = 'СалымБеков Админ'
 admin.site.index_title = 'Управление контентом'
+
+
+@admin.register(OrganizationStructure)
+class OrganizationStructureAdmin(admin.ModelAdmin):
+    """Admin interface for OrganizationStructure model"""
+    
+    list_display = [
+        'name_ru', 'structure_type', 'head_name_ru', 'icon_display', 
+        'children_count', 'is_active', 'order'
+    ]
+    list_filter = ['structure_type', 'is_active', 'parent']
+    search_fields = ['name_ru', 'name_en', 'name_ky', 'head_name_ru', 'head_name_en', 'head_name_ky']
+    ordering = ['structure_type', 'order', 'name_ru']
+    list_editable = ['is_active', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name_ru', 'structure_type', 'icon', 'parent', 'is_active', 'order')
+        }),
+        ('Переводы названия', {
+            'fields': ('name_en', 'name_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Руководитель', {
+            'fields': ('head_name_ru', 'phone', 'email'),
+        }),
+        ('Переводы имени руководителя', {
+            'fields': ('head_name_en', 'head_name_ky'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def icon_display(self, obj):
+        """Display icon in admin list"""
+        if obj.icon:
+            return format_html('<span style="font-size: 20px;">{}</span>', obj.icon)
+        return '-'
+    icon_display.short_description = 'Иконка'
+    
+    def children_count(self, obj):
+        """Display count of child departments"""
+        count = obj.children.count()
+        if count > 0:
+            return f'{count} подразделений'
+        return '-'
+    children_count.short_description = 'Подразделения'
+
+
+@admin.register(Achievement)
+class AchievementAdmin(admin.ModelAdmin):
+    """Admin interface for Achievement model"""
+    
+    list_display = [
+        'title_ru', 'year', 'category', 'icon_display', 'icon_color_display',
+        'featured', 'is_active', 'order', 'created_at'
+    ]
+    list_filter = ['category', 'featured', 'is_active', 'year', 'created_at']
+    search_fields = ['title_ru', 'title_en', 'title_ky', 'description_ru', 'description_en', 'description_ky']
+    ordering = ['-featured', '-year', 'order']
+    list_editable = ['featured', 'is_active', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('title_ru', 'year', 'category', 'featured', 'is_active', 'order')
+        }),
+        ('Переводы заголовка', {
+            'fields': ('title_en', 'title_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Описание', {
+            'fields': ('description_ru',),
+        }),
+        ('Переводы описания', {
+            'fields': ('description_en', 'description_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Внешний вид', {
+            'fields': ('icon', 'icon_color'),
+        }),
+    )
+    
+    def icon_display(self, obj):
+        """Display icon in admin list"""
+        if obj.icon:
+            return format_html('<span style="font-size: 20px;">{}</span>', obj.icon)
+        return '-'
+    icon_display.short_description = 'Иконка'
+    
+    def icon_color_display(self, obj):
+        """Display icon color preview"""
+        color_map = {
+            'bg-yellow-500': '#eab308',
+            'bg-red-500': '#ef4444',
+            'bg-blue-500': '#3b82f6',
+            'bg-purple-500': '#a855f7',
+            'bg-green-500': '#22c55e',
+            'bg-emerald-500': '#10b981',
+            'bg-indigo-500': '#6366f1',
+            'bg-pink-500': '#ec4899',
+            'bg-orange-500': '#f97316',
+            'bg-teal-500': '#14b8a6',
+        }
+        color = color_map.get(obj.icon_color, '#6b7280')
+        return format_html(
+            '<div style="width: 20px; height: 20px; background-color: {}; border-radius: 50%; border: 1px solid #ccc;"></div>',
+            color
+        )
+    icon_color_display.short_description = 'Цвет'
+
+
+@admin.register(UniversityStatistic)
+class UniversityStatisticAdmin(admin.ModelAdmin):
+    """Admin interface for UniversityStatistic model"""
+    
+    list_display = [
+        'name_ru', 'value', 'unit', 'icon_display',
+        'is_active', 'order', 'created_at'
+    ]
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['name_ru', 'name_en', 'name_ky', 'value']
+    ordering = ['order', 'name_ru']
+    list_editable = ['is_active', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name_ru', 'value', 'unit', 'icon', 'is_active', 'order')
+        }),
+        ('Переводы названия', {
+            'fields': ('name_en', 'name_ky'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def icon_display(self, obj):
+        """Display icon in admin list"""
+        if obj.icon:
+            return format_html('<span style="font-size: 20px;">{}</span>', obj.icon)
+        return '-'
+    icon_display.short_description = 'Иконка'
+
+
+@admin.register(UniversityFounder)
+class UniversityFounderAdmin(admin.ModelAdmin):
+    """Admin interface for UniversityFounder model"""
+    
+    list_display = [
+        'name_ru', 'position_ru', 'years_ru', 'image_preview',
+        'is_active', 'order', 'created_at'
+    ]
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['name_ru', 'name_en', 'name_ky', 'position_ru', 'description_ru']
+    ordering = ['order', 'name_ru']
+    list_editable = ['is_active', 'order']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name_ru', 'position_ru', 'years_ru', 'image', 'is_active', 'order')
+        }),
+        ('Переводы имени', {
+            'fields': ('name_en', 'name_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Переводы должности', {
+            'fields': ('position_en', 'position_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Переводы лет службы', {
+            'fields': ('years_en', 'years_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Описание (Русский)', {
+            'fields': ('description_ru',),
+        }),
+        ('Переводы описания', {
+            'fields': ('description_en', 'description_ky'),
+            'classes': ('collapse',)
+        }),
+        ('Достижения (Русский)', {
+            'fields': ('achievements_ru',),
+            'description': 'Введите достижения в формате JSON массива, например: ["Достижение 1", "Достижение 2"]'
+        }),
+        ('Переводы достижений', {
+            'fields': ('achievements_en', 'achievements_ky'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def image_preview(self, obj):
+        """Display image preview in admin list"""
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%;" />',
+                obj.image.url
+            )
+        return '-'
+    image_preview.short_description = 'Фото'
+    
+    def get_queryset(self, request):
+        """Optimize queries for list display"""
+        return super().get_queryset(request).select_related()

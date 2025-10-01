@@ -2,7 +2,9 @@ from rest_framework import serializers
 from .models import (
     Hospital, HospitalDepartment, Laboratory, LaboratoryEquipment,
     AcademicBuilding, BuildingFacility, BuildingPhoto,
-    Dormitory, DormitoryRoom, DormitoryFacility, DormitoryPhoto
+    Dormitory, DormitoryRoom, DormitoryFacility, DormitoryPhoto,
+    ClassroomCategory, Classroom, ClassroomEquipment, ClassroomFeature,
+    StartupCategory, Startup, StartupTeamMember, StartupInvestor, StartupAchievement
 )
 
 
@@ -346,3 +348,292 @@ class DormitoryListSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(exterior_photo.photo.url)
             return exterior_photo.photo.url
         return None
+# === CLASSROOM SERIALIZERS ===
+
+class ClassroomEquipmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassroomEquipment
+        fields = ['id', 'name_ru', 'name_kg', 'name_en', 'order']
+
+
+class ClassroomFeatureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassroomFeature
+        fields = ['id', 'name_ru', 'name_kg', 'name_en', 'order']
+
+
+class ClassroomCategorySerializer(serializers.ModelSerializer):
+    count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ClassroomCategory
+        fields = ['id', 'name_ru', 'name_kg', 'name_en', 'icon', 'count', 'order']
+    
+    def get_count(self, obj):
+        return obj.classrooms.filter(is_active=True).count()
+
+
+class ClassroomSerializer(serializers.ModelSerializer):
+    category_name = serializers.SerializerMethodField()
+    equipment = ClassroomEquipmentSerializer(many=True, read_only=True)
+    features = ClassroomFeatureSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Classroom
+        fields = [
+            'id', 'category_name',
+            'name_ru', 'name_kg', 'name_en',
+            'description_ru', 'description_kg', 'description_en',
+            'capacity', 'floor', 'size', 'image',
+            'equipment', 'features', 'order', 'is_active'
+        ]
+    
+    def get_category_name(self, obj):
+        return {
+            'ru': obj.category.name_ru,
+            'kg': obj.category.name_kg,
+            'en': obj.category.name_en
+        }
+
+
+class ClassroomLanguageAwareSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    category_name = serializers.SerializerMethodField()
+    equipment = serializers.SerializerMethodField()
+    features = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Classroom
+        fields = [
+            'id', 'name', 'description', 'category_name',
+            'capacity', 'floor', 'size', 'image', 
+            'equipment', 'features', 'order'
+        ]
+    
+    def get_language(self):
+        request = self.context.get('request')
+        if request:
+            lang = request.GET.get('lang')
+            if lang in ['ru', 'kg', 'en']:
+                return lang
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', '')
+            if 'kg' in accept_language:
+                return 'kg'
+            elif 'en' in accept_language:
+                return 'en'
+        return 'ru'
+    
+    def get_name(self, obj):
+        lang = self.get_language()
+        return getattr(obj, f'name_{lang}', obj.name_ru)
+    
+    def get_description(self, obj):
+        lang = self.get_language()
+        return getattr(obj, f'description_{lang}', obj.description_ru)
+        
+    def get_category_name(self, obj):
+        lang = self.get_language()
+        return getattr(obj.category, f'name_{lang}', obj.category.name_ru)
+    
+    def get_equipment(self, obj):
+        lang = self.get_language()
+        return [getattr(eq, f'name_{lang}', eq.name_ru) for eq in obj.equipment.all()]
+    
+    def get_features(self, obj):
+        lang = self.get_language()
+        return [getattr(feat, f'name_{lang}', feat.name_ru) for feat in obj.features.all()]
+
+
+# === STARTUP SERIALIZERS ===
+
+class StartupTeamMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StartupTeamMember
+        fields = ['id', 'name_ru', 'name_kg', 'name_en', 'order']
+
+
+class StartupInvestorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StartupInvestor
+        fields = ['id', 'name_ru', 'name_kg', 'name_en', 'order']
+
+
+class StartupAchievementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StartupAchievement
+        fields = ['id', 'achievement_ru', 'achievement_kg', 'achievement_en', 'order']
+
+
+class StartupCategorySerializer(serializers.ModelSerializer):
+    count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = StartupCategory
+        fields = ['id', 'name_ru', 'name_kg', 'name_en', 'icon', 'count', 'order']
+    
+    def get_count(self, obj):
+        return obj.startups.filter(is_active=True).count()
+
+
+class StartupSerializer(serializers.ModelSerializer):
+    category_name = serializers.SerializerMethodField()
+    team_members = StartupTeamMemberSerializer(many=True, read_only=True)
+    investors = StartupInvestorSerializer(many=True, read_only=True)
+    achievements = StartupAchievementSerializer(many=True, read_only=True)
+    stage_display = serializers.CharField(source='get_stage_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = Startup
+        fields = [
+            'id', 'category_name',
+            'name_ru', 'name_kg', 'name_en',
+            'description_ru', 'description_kg', 'description_en',
+            'full_description_ru', 'full_description_kg', 'full_description_en',
+            'stage', 'stage_display', 'status', 'status_display',
+            'funding', 'year', 'image',
+            'team_members', 'investors', 'achievements',
+            'order', 'is_active'
+        ]
+    
+    def get_category_name(self, obj):
+        return {
+            'ru': obj.category.name_ru,
+            'kg': obj.category.name_kg,
+            'en': obj.category.name_en
+        }
+
+
+class StartupLanguageAwareSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    full_description = serializers.SerializerMethodField()
+    category_name = serializers.SerializerMethodField()
+    team = serializers.SerializerMethodField()
+    investors = serializers.SerializerMethodField()
+    achievements = serializers.SerializerMethodField()
+    stage_display = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Startup
+        fields = [
+            'id', 'name', 'description', 'full_description', 'category', 'category_name',
+            'stage', 'stage_display', 'status', 'status_display',
+            'funding', 'year', 'image', 
+            'team', 'investors', 'achievements', 'order'
+        ]
+    
+    def get_language(self):
+        request = self.context.get('request')
+        if request:
+            lang = request.GET.get('lang')
+            if lang in ['ru', 'kg', 'en']:
+                return lang
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', '')
+            if 'kg' in accept_language:
+                return 'kg'
+            elif 'en' in accept_language:
+                return 'en'
+        return 'ru'
+    
+    def get_name(self, obj):
+        lang = self.get_language()
+        return getattr(obj, f'name_{lang}', obj.name_ru)
+    
+    def get_description(self, obj):
+        lang = self.get_language()
+        return getattr(obj, f'description_{lang}', obj.description_ru)
+    
+    def get_full_description(self, obj):
+        lang = self.get_language()
+        return getattr(obj, f'full_description_{lang}', obj.full_description_ru)
+        
+    def get_category_name(self, obj):
+        lang = self.get_language()
+        return getattr(obj.category, f'name_{lang}', obj.category.name_ru)
+    
+    def get_team(self, obj):
+        lang = self.get_language()
+        return [getattr(member, f'name_{lang}', member.name_ru) for member in obj.team_members.all()]
+    
+    def get_investors(self, obj):
+        lang = self.get_language()
+        return [getattr(inv, f'name_{lang}', inv.name_ru) for inv in obj.investors.all()]
+    
+    def get_achievements(self, obj):
+        lang = self.get_language()
+        return [getattr(ach, f'achievement_{lang}', ach.achievement_ru) for ach in obj.achievements.all()]
+
+    def get_stage_display(self, obj):
+        """Get localized stage display"""
+        stage_translations = {
+            'seed': {
+                'ru': 'Посевная стадия',
+                'kg': 'Себүү баскычы',
+                'en': 'Seed Stage'
+            },
+            'series_a': {
+                'ru': 'Серия A',
+                'kg': 'A сериясы',
+                'en': 'Series A'
+            },
+            'growth': {
+                'ru': 'Рост',
+                'kg': 'Өсүү',
+                'en': 'Growth'
+            },
+            'research': {
+                'ru': 'Исследования',
+                'kg': 'Изилдөөлөр',
+                'en': 'Research'
+            },
+            'prototype': {
+                'ru': 'Прототип',
+                'kg': 'Прототип',
+                'en': 'Prototype'
+            },
+            'scaling': {
+                'ru': 'Масштабирование',
+                'kg': 'Масштабдоо',
+                'en': 'Scaling'
+            },
+        }
+        
+        lang = self.get_language()
+        return stage_translations.get(obj.stage, {}).get(lang, obj.get_stage_display())
+
+    def get_status_display(self, obj):
+        """Get localized status display"""
+        status_translations = {
+            'active': {
+                'ru': 'Активный',
+                'kg': 'Активдүү',
+                'en': 'Active'
+            },
+            'development': {
+                'ru': 'В разработке',
+                'kg': 'Иштеп жатат',
+                'en': 'In Development'
+            },
+            'scaling': {
+                'ru': 'Масштабирование',
+                'kg': 'Масштабдоо',
+                'en': 'Scaling'
+            },
+            'research': {
+                'ru': 'Исследования',
+                'kg': 'Изилдөөлөр',
+                'en': 'Research'
+            },
+            'prototype': {
+                'ru': 'Прототип',
+                'kg': 'Прототип',
+                'en': 'Prototype'
+            },
+        }
+        
+        lang = self.get_language()
+        return status_translations.get(obj.status, {}).get(lang, obj.get_status_display())
+

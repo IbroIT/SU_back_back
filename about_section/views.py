@@ -5,298 +5,21 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import Partner, AboutSection, Accreditation, CouncilType, CouncilMember, CouncilDocument
+from .models import (
+    Partner, AboutSection, 
+    OrganizationStructure, Achievement, UniversityStatistic, UniversityFounder
+)
 from .serializers import (
     PartnerSerializer, 
     PartnerListSerializer, 
     AboutSectionSerializer, 
     AboutSectionWithPartnersSerializer,
-    AccreditationSerializer,
-    CouncilTypeSerializer,
-    CouncilTypeListSerializer,
-    CouncilMemberSerializer,
-    CouncilDocumentSerializer
+    OrganizationStructureSerializer,
+    AchievementSerializer,
+    UniversityStatisticSerializer,
+    UniversityFounderSerializer,
+    UniversityFounderListSerializer
 )
-
-
-class AccreditationListView(generics.ListAPIView):
-    """
-    Get list of active accreditations
-    Supports filtering by type and ordering
-    """
-    queryset = Accreditation.objects.filter(is_active=True)
-    serializer_class = AccreditationSerializer
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['accreditation_type', 'is_active']
-    search_fields = ['title', 'title_en', 'title_ky', 'description']
-    ordering_fields = ['order', 'year', 'title', 'created_at']
-    ordering = ['order', 'title']
-
-
-class AccreditationDetailView(generics.RetrieveAPIView):
-    """
-    Get detailed information about a specific accreditation
-    """
-    queryset = Accreditation.objects.filter(is_active=True)
-    serializer_class = AccreditationSerializer
-    lookup_field = 'id'
-
-
-class CouncilTypeListView(generics.ListAPIView):
-    """
-    Get list of active council types for navigation
-    """
-    queryset = CouncilType.objects.filter(is_active=True)
-    serializer_class = CouncilTypeListSerializer
-    ordering = ['order', 'name']
-
-
-class CouncilTypeDetailView(generics.RetrieveAPIView):
-    """
-    Get detailed information about a specific council type with members and documents
-    """
-    queryset = CouncilType.objects.filter(is_active=True)
-    serializer_class = CouncilTypeSerializer
-    lookup_field = 'slug'
-
-
-@api_view(['GET'])
-def accreditations_for_frontend(request):
-    """
-    API endpoint optimized for the frontend Status component
-    Returns accreditations data in the exact format expected by the React component
-    """
-    try:
-        # Get active accreditations ordered by order field
-        accreditations = Accreditation.objects.filter(is_active=True).order_by('order', 'title')
-        
-        # Get language from request
-        language = request.GET.get('lang', 'ru')
-        if not language:
-            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
-            if 'en' in accept_language:
-                language = 'en'
-            elif 'ky' in accept_language:
-                language = 'ky'
-        
-        # Get filter parameter
-        filter_type = request.GET.get('type', 'all')
-        
-        # Apply filter if specified
-        if filter_type != 'all':
-            accreditations = accreditations.filter(accreditation_type=filter_type)
-        
-        # Format data for frontend
-        accreditations_data = []
-        for accreditation in accreditations:
-            accreditation_data = {
-                'id': accreditation.id,
-                'title': accreditation.get_display_title(language),
-                'description': accreditation.get_display_description(language),
-                'fullDescription': accreditation.get_display_full_description(language),
-                'logo': accreditation.logo,
-                'year': accreditation.year,
-                'status': accreditation.get_display_status(language),
-                'validity': accreditation.get_display_validity(language),
-                'level': accreditation.get_display_level(language),
-                'type': accreditation.accreditation_type,
-                'benefits': accreditation.get_display_benefits(language),
-                'color': accreditation.color,
-                'iconColor': accreditation.icon_color,
-                'badgeColor': accreditation.badge_color,
-            }
-            accreditations_data.append(accreditation_data)
-        
-        return Response({
-            'success': True,
-            'count': len(accreditations_data),
-            'data': accreditations_data
-        })
-        
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-def councils_for_frontend(request):
-    """
-    API endpoint optimized for the frontend Advices component
-    Returns councils data in the exact format expected by the React component
-    """
-    try:
-        # Get language from request
-        language = request.GET.get('lang', 'ru')
-        if not language:
-            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
-            if 'en' in accept_language:
-                language = 'en'
-            elif 'ky' in accept_language:
-                language = 'ky'
-        
-        # Get active council types
-        council_types = CouncilType.objects.filter(is_active=True).order_by('order', 'name')
-        
-        # Format sections data for frontend
-        sections_data = {}
-        sections_list = []
-        
-        for council_type in council_types:
-            # Get active members for this council type
-            members = CouncilMember.objects.filter(
-                council_type=council_type, 
-                is_active=True
-            ).order_by('order', 'name')
-            
-            # Get active documents for this council type
-            documents = CouncilDocument.objects.filter(
-                council_type=council_type,
-                is_active=True
-            ).order_by('order', '-date')
-            
-            # Format members data
-            members_data = []
-            for member in members:
-                member_data = {
-                    'id': member.id,
-                    'name': member.get_display_name(language),
-                    'position': member.get_display_position(language),
-                    'department': member.get_display_department(language),
-                    'bio': member.get_display_bio(language),
-                    'photo': member.photo.url if member.photo else None,
-                    'email': member.email,
-                    'phone': member.phone,
-                }
-                members_data.append(member_data)
-            
-            # Format documents data
-            documents_data = []
-            for document in documents:
-                document_data = {
-                    'id': document.id,
-                    'title': document.get_display_title(language),
-                    'date': document.date.strftime('%d.%m.%Y'),
-                    'size': document.size,
-                    'description': document.get_display_description(language),
-                    'file_url': document.file.url if document.file else None,
-                }
-                documents_data.append(document_data)
-            
-            # Create section data
-            section_data = {
-                'title': council_type.get_display_name(language),
-                'description': council_type.get_display_description(language),
-                'members': members_data if members_data else None,
-                'documents': documents_data if documents_data else None,
-            }
-            
-            # Add to sections data with slug as key
-            sections_data[council_type.slug] = section_data
-            
-            # Add to sections list for navigation
-            sections_list.append({
-                'id': council_type.slug,
-                'name': council_type.get_display_name(language)
-            })
-        
-        return Response({
-            'success': True,
-            'sections_data': sections_data,
-            'sections_list': sections_list,
-            'count': len(sections_data)
-        })
-        
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-def council_detail_for_frontend(request, slug):
-    """
-    Get detailed information about a specific council type for frontend
-    """
-    try:
-        # Get language from request
-        language = request.GET.get('lang', 'ru')
-        if not language:
-            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
-            if 'en' in accept_language:
-                language = 'en'
-            elif 'ky' in accept_language:
-                language = 'ky'
-        
-        # Get council type
-        council_type = get_object_or_404(CouncilType, slug=slug, is_active=True)
-        
-        # Get active members
-        members = CouncilMember.objects.filter(
-            council_type=council_type,
-            is_active=True
-        ).order_by('order', 'name')
-        
-        # Get active documents
-        documents = CouncilDocument.objects.filter(
-            council_type=council_type,
-            is_active=True
-        ).order_by('order', '-date')
-        
-        # Format members data
-        members_data = []
-        for member in members:
-            member_data = {
-                'id': member.id,
-                'name': member.get_display_name(language),
-                'position': member.get_display_position(language),
-                'department': member.get_display_department(language),
-                'bio': member.get_display_bio(language),
-                'photo': member.photo.url if member.photo else None,
-                'email': member.email,
-                'phone': member.phone,
-            }
-            members_data.append(member_data)
-        
-        # Format documents data
-        documents_data = []
-        for document in documents:
-            document_data = {
-                'id': document.id,
-                'title': document.get_display_title(language),
-                'date': document.date.strftime('%d.%m.%Y'),
-                'size': document.size,
-                'description': document.get_display_description(language),
-                'file_url': document.file.url if document.file else None,
-            }
-            documents_data.append(document_data)
-        
-        # Create response data
-        section_data = {
-            'title': council_type.get_display_name(language),
-            'description': council_type.get_display_description(language),
-            'members': members_data if members_data else None,
-            'documents': documents_data if documents_data else None,
-        }
-        
-        return Response({
-            'success': True,
-            'data': section_data
-        })
-        
-    except CouncilType.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Council type not found'
-        }, status=status.HTTP_404_NOT_FOUND)
-        
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PartnerListView(generics.ListAPIView):
@@ -506,4 +229,313 @@ def partners_stats(request):
         return Response({
             'success': False,
             'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Organization Structure Views
+class OrganizationStructureListView(generics.ListAPIView):
+    """
+    Get list of active organizational structures with multilingual support
+    """
+    queryset = OrganizationStructure.objects.filter(is_active=True, parent__isnull=True)
+    serializer_class = OrganizationStructureSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['structure_type', 'is_active']
+    ordering_fields = ['structure_type', 'order', 'name_ru']
+    ordering = ['structure_type', 'order', 'name_ru']
+
+
+@api_view(['GET'])
+def structure_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Structure component
+    Returns structure data in the exact format expected by the React component
+    """
+    try:
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Get structure type filter
+        structure_type = request.GET.get('type', None)
+        
+        # Build queryset
+        queryset = OrganizationStructure.objects.filter(is_active=True, parent__isnull=True)
+        if structure_type:
+            queryset = queryset.filter(structure_type=structure_type)
+        
+        structures = queryset.order_by('structure_type', 'order')
+        
+        # Group by structure type
+        structure_data = {}
+        
+        for structure in structures:
+            # Get structure type key for grouping
+            type_key = structure.structure_type
+            
+            if type_key not in structure_data:
+                # Map structure types to display names
+                type_display_mapping = {
+                    'leadership': {
+                        'ru': 'Руководство',
+                        'en': 'Leadership', 
+                        'ky': 'Жетекчилик'
+                    },
+                    'faculties': {
+                        'ru': 'Факультеты',
+                        'en': 'Faculties',
+                        'ky': 'Факультеттер'
+                    },
+                    'administrative': {
+                        'ru': 'Административные подразделения',
+                        'en': 'Administrative Departments',
+                        'ky': 'Администрациялык бөлүмдөр'
+                    },
+                    'support': {
+                        'ru': 'Вспомогательные подразделения',
+                        'en': 'Support Departments',
+                        'ky': 'Жардамчы бөлүмдөр'
+                    }
+                }
+                
+                title = type_display_mapping.get(type_key, {}).get(language, type_key)
+                
+                structure_data[type_key] = {
+                    'title': title,
+                    'icon': structure.icon,
+                    'items': []
+                }
+            
+            # Get child departments
+            children = structure.children.filter(is_active=True).order_by('order')
+            departments = [child.get_display_name(language) for child in children]
+            
+            item_data = {
+                'name': structure.get_display_name(language),
+                'head': structure.get_display_head_name(language),
+                'phone': structure.phone,
+                'email': structure.email,
+                'departments': departments
+            }
+            
+            structure_data[type_key]['items'].append(item_data)
+        
+        return Response({
+            'success': True,
+            'data': structure_data,
+            'language': language
+        })
+        
+    except Exception as e:
+        print(f"Error in structure_for_frontend: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'data': {}
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Achievement Views
+class AchievementListView(generics.ListAPIView):
+    """
+    Get list of active achievements with multilingual support
+    """
+    queryset = Achievement.objects.filter(is_active=True)
+    serializer_class = AchievementSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['category', 'featured', 'year', 'is_active']
+    ordering_fields = ['year', 'order', 'featured']
+    ordering = ['-featured', '-year', 'order']
+
+
+@api_view(['GET'])
+def achievements_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Achievements component
+    Returns achievements data in the exact format expected by the React component
+    """
+    try:
+        # Get active achievements ordered by featured, year, and order
+        achievements = Achievement.objects.filter(is_active=True).order_by('-featured', '-year', 'order')
+        
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Get category filter
+        category = request.GET.get('category', 'all')
+        if category != 'all':
+            achievements = achievements.filter(category=category)
+        
+        # Format data for frontend
+        achievements_data = []
+        for achievement in achievements:
+            achievement_data = {
+                'id': achievement.id,
+                'title': achievement.get_display_title(language),
+                'description': achievement.get_display_description(language),
+                'year': str(achievement.year),
+                'category': achievement.category,
+                'icon': achievement.icon,
+                'iconColor': achievement.icon_color,
+                'featured': achievement.featured
+            }
+            
+            achievements_data.append(achievement_data)
+        
+        return Response({
+            'success': True,
+            'data': achievements_data,
+            'count': len(achievements_data),
+            'language': language
+        })
+        
+    except Exception as e:
+        print(f"Error in achievements_for_frontend: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'data': []
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Statistics Views
+class UniversityStatisticListView(generics.ListAPIView):
+    """
+    Get list of active university statistics with multilingual support
+    """
+    queryset = UniversityStatistic.objects.filter(is_active=True)
+    serializer_class = UniversityStatisticSerializer
+    filter_backends = [OrderingFilter]
+    ordering_fields = ['order', 'name_ru']
+    ordering = ['order', 'name_ru']
+
+
+@api_view(['GET'])
+def statistics_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Statistics component
+    Returns statistics data in the exact format expected by the React component
+    """
+    try:
+        # Get active statistics ordered by order field
+        statistics = UniversityStatistic.objects.filter(is_active=True).order_by('order', 'name_ru')
+        
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Format data for frontend
+        statistics_data = []
+        for stat in statistics:
+            stat_data = {
+                'id': stat.id,
+                'name': stat.get_display_name(language),
+                'value': stat.value,
+                'unit': stat.unit,
+                'icon': stat.icon
+            }
+            
+            statistics_data.append(stat_data)
+        
+        return Response({
+            'success': True,
+            'data': statistics_data,
+            'count': len(statistics_data),
+            'language': language
+        })
+        
+    except Exception as e:
+        print(f"Error in statistics_for_frontend: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'data': []
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class UniversityFounderListView(generics.ListAPIView):
+    """
+    Get list of active university founders
+    Supports filtering and ordering
+    """
+    queryset = UniversityFounder.objects.filter(is_active=True)
+    serializer_class = UniversityFounderListSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active']
+    search_fields = ['name_ru', 'name_en', 'name_ky', 'position_ru', 'description_ru']
+    ordering_fields = ['order', 'name_ru', 'created_at']
+    ordering = ['order', 'name_ru']
+
+
+class UniversityFounderDetailView(generics.RetrieveAPIView):
+    """
+    Get detailed information about a specific university founder
+    """
+    queryset = UniversityFounder.objects.filter(is_active=True)
+    serializer_class = UniversityFounderSerializer
+    lookup_field = 'id'
+
+
+@api_view(['GET'])
+def founders_for_frontend(request):
+    """
+    API endpoint optimized for the frontend Founders component
+    Returns founders data in the exact format expected by the React component
+    """
+    try:
+        # Get active founders ordered by order field
+        founders = UniversityFounder.objects.filter(is_active=True).order_by('order', 'name_ru')
+        
+        # Get language from request
+        language = request.GET.get('lang', 'ru')
+        if not language:
+            accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'ru')
+            if 'en' in accept_language:
+                language = 'en'
+            elif 'ky' in accept_language:
+                language = 'ky'
+        
+        # Format data for frontend
+        founders_data = []
+        for founder in founders:
+            founder_data = {
+                'id': founder.id,
+                'name': founder.get_name(language),
+                'position': founder.get_position(language),
+                'years': founder.get_years(language),
+                'image': founder.image.url if founder.image else "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face",
+                'description': founder.get_description(language),
+                'achievements': founder.get_achievements(language),
+                'order': founder.order
+            }
+            founders_data.append(founder_data)
+        
+        return Response({
+            'success': True,
+            'count': len(founders_data),
+            'data': founders_data
+        })
+        
+    except Exception as e:
+        print(f"Error in founders_for_frontend: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e),
+            'data': []
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

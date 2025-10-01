@@ -2,7 +2,9 @@ from django.contrib import admin
 from .models import (
     Hospital, HospitalDepartment, Laboratory, LaboratoryEquipment,
     AcademicBuilding, BuildingFacility, BuildingPhoto,
-    Dormitory, DormitoryRoom, DormitoryFacility, DormitoryPhoto
+    Dormitory, DormitoryRoom, DormitoryFacility, DormitoryPhoto,
+    ClassroomCategory, Classroom, ClassroomEquipment, ClassroomFeature,
+    StartupCategory, Startup, StartupTeamMember, StartupInvestor, StartupAchievement
 )
 
 
@@ -198,3 +200,99 @@ class DormitoryPhotoAdmin(admin.ModelAdmin):
     list_filter = ['dormitory', 'type']
     search_fields = ['title_ru', 'title_kg', 'title_en']
     ordering = ['dormitory__name_ru', 'type', 'order']
+
+
+# === CLASSROOM ADMIN ===
+
+class ClassroomEquipmentInline(admin.TabularInline):
+    model = ClassroomEquipment
+    extra = 0
+    fields = ['name_ru', 'name_kg', 'name_en', 'order']
+
+
+class ClassroomFeatureInline(admin.TabularInline):
+    model = ClassroomFeature
+    extra = 0
+    fields = ['name_ru', 'name_kg', 'name_en', 'order']
+
+
+@admin.register(ClassroomCategory)
+class ClassroomCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name_ru', 'name_kg', 'name_en', 'icon', 'order']
+    list_editable = ['order']
+    ordering = ['order', 'name_ru']
+
+
+@admin.register(Classroom)
+class ClassroomAdmin(admin.ModelAdmin):
+    list_display = ['name_ru', 'category', 'capacity', 'floor', 'size', 'is_active', 'order']
+    list_filter = ['category', 'is_active', 'floor']
+    search_fields = ['name_ru', 'name_kg', 'name_en', 'description_ru', 'description_kg', 'description_en']
+    list_editable = ['order', 'is_active']
+    ordering = ['order', 'name_ru']
+    inlines = [ClassroomEquipmentInline, ClassroomFeatureInline]
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('category', 'name_ru', 'name_kg', 'name_en', 'image', 'is_active', 'order')
+        }),
+        ('Описание', {
+            'fields': ('description_ru', 'description_kg', 'description_en')
+        }),
+        ('Технические характеристики', {
+            'fields': ('capacity', 'floor', 'size')
+        }),
+    )
+
+
+# === STARTUP ADMIN ===
+
+class StartupTeamMemberInline(admin.TabularInline):
+    model = StartupTeamMember
+    extra = 0
+    fields = ['name_ru', 'name_kg', 'name_en', 'order']
+
+
+class StartupInvestorInline(admin.TabularInline):
+    model = StartupInvestor
+    extra = 0
+    fields = ['name_ru', 'name_kg', 'name_en', 'order']
+
+
+class StartupAchievementInline(admin.TabularInline):
+    model = StartupAchievement
+    extra = 0
+    fields = ['achievement_ru', 'achievement_kg', 'achievement_en', 'order']
+
+
+@admin.register(StartupCategory)
+class StartupCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name_ru', 'name_kg', 'name_en', 'icon', 'order']
+    list_editable = ['order']
+    ordering = ['order', 'name_ru']
+
+
+@admin.register(Startup)
+class StartupAdmin(admin.ModelAdmin):
+    list_display = ['name_ru', 'category', 'stage', 'status', 'funding', 'year', 'is_active', 'order']
+    list_filter = ['category', 'stage', 'status', 'is_active', 'year']
+    search_fields = ['name_ru', 'name_kg', 'name_en', 'description_ru', 'description_kg', 'description_en']
+    list_editable = ['order', 'is_active']
+    ordering = ['order', 'name_ru']
+    inlines = [StartupTeamMemberInline, StartupInvestorInline, StartupAchievementInline]
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('category', 'name_ru', 'name_kg', 'name_en', 'image', 'is_active', 'order')
+        }),
+        ('Описание', {
+            'fields': ('description_ru', 'description_kg', 'description_en')
+        }),
+        ('Полное описание', {
+            'fields': ('full_description_ru', 'full_description_kg', 'full_description_en')
+        }),
+        ('Статус и финансы', {
+            'fields': ('stage', 'status', 'funding', 'year')
+        }),
+    )
+
