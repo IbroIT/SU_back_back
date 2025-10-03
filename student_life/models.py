@@ -867,3 +867,112 @@ class StudentLifeStatistic(models.Model):
 
     def __str__(self):
         return f"{self.label_ru}: {self.value}"
+
+
+class EResourceCategory(models.Model):
+    """Категории электронных ресурсов"""
+    # Мультиязычные поля
+    name_ru = models.CharField('Название (русский)', max_length=255)
+    name_kg = models.CharField('Название (кыргызский)', max_length=255)
+    name_en = models.CharField('Название (английский)', max_length=255)
+    
+    # Немультиязычные поля
+    icon = models.CharField(_('Иконка'), max_length=100, default='📚')
+    color = models.CharField(_('Цвет градиента'), max_length=100, default='from-blue-500 to-blue-600')
+    is_active = models.BooleanField(_('Активна'), default=True)
+    order = models.PositiveIntegerField(_('Порядок'), default=0)
+    created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Дата обновления'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Категория электронных ресурсов')
+        verbose_name_plural = _('Категории электронных ресурсов')
+        ordering = ['order', 'name_ru']
+
+    def __str__(self):
+        return self.name_ru
+
+    @property
+    def count(self):
+        """Количество активных ресурсов в категории"""
+        return self.eresources.filter(is_active=True).count()
+
+
+class EResource(models.Model):
+    """Электронные ресурсы"""
+    STATUS_CHOICES = [
+        ('online', _('В сети')),
+        ('maintenance', _('Техническое обслуживание')),
+        ('offline', _('Офлайн')),
+    ]
+    
+    # Связи
+    category = models.ForeignKey(
+        EResourceCategory, 
+        on_delete=models.CASCADE,
+        related_name='eresources',
+        verbose_name=_('Категория')
+    )
+    
+    # Мультиязычные поля
+    title_ru = models.CharField('Название (русский)', max_length=255)
+    title_kg = models.CharField('Название (кыргызский)', max_length=255)
+    title_en = models.CharField('Название (английский)', max_length=255)
+    
+    description_ru = models.TextField('Описание (русский)')
+    description_kg = models.TextField('Описание (кыргызский)')
+    description_en = models.TextField('Описание (английский)')
+    
+    # Немультиязычные поля
+    icon = models.CharField(_('Иконка'), max_length=100, default='🔗')
+    color = models.CharField(_('Цвет градиента'), max_length=100, default='from-blue-500 to-blue-600')
+    url = models.URLField(_('URL ресурса'), blank=True, null=True)
+    users_count = models.PositiveIntegerField(_('Количество пользователей'), default=0)
+    status = models.CharField(_('Статус'), max_length=20, choices=STATUS_CHOICES, default='online')
+    is_popular = models.BooleanField(_('Популярный'), default=False)
+    is_active = models.BooleanField(_('Активен'), default=True)
+    order = models.PositiveIntegerField(_('Порядок'), default=0)
+    created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Дата обновления'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Электронный ресурс')
+        verbose_name_plural = _('Электронные ресурсы')
+        ordering = ['order', 'title_ru']
+
+    def __str__(self):
+        return self.title_ru
+
+    @property
+    def users_display(self):
+        """Форматированное отображение количества пользователей"""
+        if self.users_count >= 1000:
+            return f"{self.users_count // 1000}k+"
+        return f"{self.users_count}+"
+
+
+class EResourceFeature(models.Model):
+    """Особенности электронных ресурсов"""
+    # Связи
+    resource = models.ForeignKey(
+        EResource,
+        on_delete=models.CASCADE,
+        related_name='features',
+        verbose_name=_('Ресурс')
+    )
+    
+    # Мультиязычные поля
+    text_ru = models.CharField('Текст (русский)', max_length=255)
+    text_kg = models.CharField('Текст (кыргызский)', max_length=255)
+    text_en = models.CharField('Текст (английский)', max_length=255)
+    
+    # Немультиязычные поля
+    order = models.PositiveIntegerField(_('Порядок'), default=0)
+
+    class Meta:
+        verbose_name = _('Особенность ресурса')
+        verbose_name_plural = _('Особенности ресурсов')
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.resource.title_ru} - {self.text_ru}"

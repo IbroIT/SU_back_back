@@ -254,6 +254,102 @@ class MissionSection(models.Model):
         verbose_name_plural = 'Секции Миссии'
         ordering = ['-created_at']
     
+    def get_display_title(self, language='ru'):
+        """Get title based on language"""
+        if language == 'en':
+            return self.title_en or self.title
+        elif language == 'kg':
+            return self.title_ky or self.title
+        return self.title
+    
+    def get_display_subtitle(self, language='ru'):
+        """Get subtitle based on language"""
+        if language == 'en':
+            return self.subtitle_en or self.subtitle
+        elif language == 'kg':
+            return self.subtitle_ky or self.subtitle
+        return self.subtitle
+    
+    def get_display_mission_text(self, language='ru'):
+        """Get mission text based on language"""
+        if language == 'en':
+            return self.mission_text_en or self.mission_text
+        elif language == 'kg':
+            return self.mission_text_ky or self.mission_text
+        return self.mission_text
+    
+    def get_display_vision_title(self, language='ru'):
+        """Get vision title based on language"""
+        if language == 'en':
+            return self.vision_title_en or self.vision_title
+        elif language == 'kg':
+            return self.vision_title_ky or self.vision_title
+        return self.vision_title
+    
+    def get_display_vision_text(self, language='ru'):
+        """Get vision text based on language"""
+        if language == 'en':
+            return self.vision_text_en or self.vision_text
+        elif language == 'kg':
+            return self.vision_text_ky or self.vision_text
+        return self.vision_text
+    
+    def get_display_approach_title(self, language='ru'):
+        """Get approach title based on language"""
+        if language == 'en':
+            return self.approach_title_en or self.approach_title
+        elif language == 'kg':
+            return self.approach_title_ky or self.approach_title
+        return self.approach_title
+    
+    def get_display_approach_text(self, language='ru'):
+        """Get approach text based on language"""
+        if language == 'en':
+            return self.approach_text_en or self.approach_text
+        elif language == 'kg':
+            return self.approach_text_ky or self.approach_text
+        return self.approach_text
+    
+    def get_display_achievements_subtitle(self, language='ru'):
+        """Get achievements subtitle based on language"""
+        if language == 'en':
+            return self.achievements_subtitle_en or self.achievements_subtitle
+        elif language == 'kg':
+            return self.achievements_subtitle_ky or self.achievements_subtitle
+        return self.achievements_subtitle
+    
+    def get_display_impact_title(self, language='ru'):
+        """Get impact title based on language"""
+        if language == 'en':
+            return self.impact_title_en or self.impact_title
+        elif language == 'kg':
+            return self.impact_title_ky or self.impact_title
+        return self.impact_title
+    
+    def get_display_impact_text(self, language='ru'):
+        """Get impact text based on language"""
+        if language == 'en':
+            return self.impact_text_en or self.impact_text
+        elif language == 'kg':
+            return self.impact_text_ky or self.impact_text
+        return self.impact_text
+    
+    def get_display_future_title(self, language='ru'):
+        """Get future title based on language"""
+        if language == 'en':
+            return self.future_title_en or self.future_title
+        elif language == 'kg':
+            return self.future_title_ky or self.future_title
+        return self.future_title
+    
+    def get_display_future_text(self, language='ru'):
+        """Get future text based on language"""
+        if language == 'en':
+            return self.future_text_en or self.future_text
+        elif language == 'kg':
+            return self.future_text_ky or self.future_text
+        return self.future_text
+
     def __str__(self):
         return self.title
 
@@ -339,6 +435,22 @@ class HistoryMilestone(models.Model):
         verbose_name_plural = 'Исторические вехи'
         ordering = ['order', 'year']
     
+    def get_display_title(self, language='ru'):
+        """Get title based on language"""
+        if language == 'en':
+            return self.title_en or self.title
+        elif language == 'kg':
+            return self.title_ky or self.title
+        return self.title
+    
+    def get_display_description(self, language='ru'):
+        """Get description based on language"""
+        if language == 'en':
+            return self.description_en or self.description
+        elif language == 'kg':
+            return self.description_ky or self.description
+        return self.description
+
     def __str__(self):
         return f"{self.year} - {self.title}"
 
@@ -425,6 +537,22 @@ class Value(models.Model):
         ordering = ['order']
         unique_together = ['type']  # Каждый тип может быть только один
     
+    def get_display_title(self, language='ru'):
+        """Get title based on language"""
+        if language == 'en':
+            return self.title_en or self.title
+        elif language == 'kg':
+            return self.title_ky or self.title
+        return self.title
+    
+    def get_display_description(self, language='ru'):
+        """Get description based on language"""
+        if language == 'en':
+            return self.description_en or self.description
+        elif language == 'kg':
+            return self.description_ky or self.description
+        return self.description
+
     def __str__(self):
         return self.title
 
@@ -484,6 +612,14 @@ class Priority(models.Model):
         verbose_name_plural = 'Приоритеты'
         ordering = ['order']
     
+    def get_display_text(self, language='ru'):
+        """Get text based on language"""
+        if language == 'en':
+            return self.text_en or self.text
+        elif language == 'kg':
+            return self.text_ky or self.text
+        return self.text
+
     def __str__(self):
         return self.text[:100] + '...' if len(self.text) > 100 else self.text
 
@@ -543,5 +679,13 @@ class Achievement(models.Model):
         verbose_name_plural = 'Достижения'
         ordering = ['order']
     
+    def get_display_label(self, language='ru'):
+        """Get label based on language"""
+        if language == 'en':
+            return self.label_en or self.label
+        elif language == 'kg':
+            return self.label_ky or self.label
+        return self.label
+
     def __str__(self):
         return f"{self.number} - {self.label}"

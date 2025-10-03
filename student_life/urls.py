@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PartnerOrganizationViewSet, StudentAppealViewSet,
     PhotoAlbumViewSet, PhotoViewSet, VideoContentViewSet, StudentLifeStatisticViewSet,
+    EResourceCategoryViewSet, EResourceViewSet,
     internships_data, academic_mobility_data, regulations_data, instructions_data,
     gallery_data, life_overview_data, download_file
 )
@@ -14,6 +15,8 @@ router.register(r'photo-albums', PhotoAlbumViewSet)
 router.register(r'photos', PhotoViewSet)
 router.register(r'videos', VideoContentViewSet)
 router.register(r'statistics', StudentLifeStatisticViewSet)
+router.register(r'e-resource-categories', EResourceCategoryViewSet)
+router.register(r'e-resources', EResourceViewSet)
 
 urlpatterns = [
     path('api/', include(router.urls)),

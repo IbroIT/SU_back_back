@@ -76,7 +76,7 @@ class AchievementViewSet(viewsets.ModelViewSet):
 class MissionCompleteViewSet(viewsets.ViewSet):
     """
     Специальный ViewSet для получения всех данных миссии одним запросом
-    Идеально подходит для фронтенда
+    Идеально подходит для фронтенда с поддержкой мультиязычности
     """
     
     @action(detail=False, methods=['get'])
@@ -84,6 +84,7 @@ class MissionCompleteViewSet(viewsets.ViewSet):
         """
         Возвращает все данные миссии в одном ответе
         GET /api/mission/complete_data/
+        Поддерживает параметр lang для мультиязычности: ?lang=en или ?lang=ky
         """
         try:
             # Получаем основную секцию миссии (берем первую активную)
@@ -104,8 +105,8 @@ class MissionCompleteViewSet(viewsets.ViewSet):
                 'achievements': achievements,
             }
             
-            # Сериализуем данные
-            serializer = MissionCompleteSerializer(data)
+            # Сериализуем данные с передачей контекста запроса
+            serializer = MissionCompleteSerializer(data, context={'request': request})
             
             return Response(serializer.data, status=status.HTTP_200_OK)
             
@@ -119,5 +120,6 @@ class MissionCompleteViewSet(viewsets.ViewSet):
         """
         Альтернативный endpoint для получения всех данных
         GET /api/mission/
+        Поддерживает параметр lang для мультиязычности: ?lang=en или ?lang=ky
         """
         return self.complete_data(request)

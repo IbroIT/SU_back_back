@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -7,18 +7,21 @@ from django.conf import settings
 from django.utils import timezone
 from django.http import HttpResponse, Http404, FileResponse
 from django.utils.encoding import force_str
+from django_filters.rest_framework import DjangoFilterBackend
 import os
 import mimetypes
 from .models import (
     PartnerOrganization, StudentAppeal, PhotoAlbum, Photo, 
     VideoContent, StudentLifeStatistic, InternshipRequirement, ReportTemplate,
-    StudentGuide, GuideRequirement, GuideStep, GuideStepDetail
+    StudentGuide, GuideRequirement, GuideStep, GuideStepDetail,
+    EResourceCategory, EResource, EResourceFeature
 )
 from .serializers import (
     PartnerOrganizationSerializer, StudentAppealSerializer,
     PhotoAlbumSerializer, PhotoSerializer, VideoContentSerializer,
     StudentLifeStatisticSerializer, InternshipRequirementSerializer,
-    ReportTemplateSerializer, StudentGuideSerializer
+    ReportTemplateSerializer, StudentGuideSerializer,
+    EResourceCategorySerializer, EResourceSerializer
 )
 
 
@@ -753,3 +756,74 @@ def download_file(request, file_id):
         raise Http404("Шаблон не найден")
     except Exception as e:
         return HttpResponse(f'Ошибка при скачивании файла: {str(e)}', status=500)
+
+
+# =============================================================================
+# VIEWSETS ДЛЯ ЭЛЕКТРОННЫХ РЕСУРСОВ
+# =============================================================================
+
+class EResourceCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для категорий электронных ресурсов"""
+    queryset = EResourceCategory.objects.filter(is_active=True).order_by('order', 'name_ru')
+    serializer_class = EResourceCategorySerializer
+    permission_classes = [AllowAny]
+    
+    @action(detail=True, methods=['get'])
+    def resources(self, request, pk=None):
+        """Получить все ресурсы категории"""
+        category = self.get_object()
+        resources = category.eresources.filter(is_active=True).order_by('order', 'title_ru')
+        serializer = EResourceSerializer(resources, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+class EResourceViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для электронных ресурсов"""
+    queryset = EResource.objects.filter(is_active=True).order_by('order', 'title_ru')
+    serializer_class = EResourceSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['category', 'status', 'is_popular']
+    search_fields = ['title_ru', 'title_kg', 'title_en', 'description_ru', 'description_kg', 'description_en']
+    ordering_fields = ['order', 'title_ru', 'users_count', 'created_at']
+    
+    @action(detail=False, methods=['get'])
+    def popular(self, request):
+        """Получить популярные ресурсы"""
+        popular_resources = self.queryset.filter(is_popular=True)
+        serializer = self.get_serializer(popular_resources, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_category(self, request):
+        """Получить ресурсы сгруппированные по категориям"""
+        categories = EResourceCategory.objects.filter(is_active=True).order_by('order', 'name_ru')
+        result = []
+        
+        for category in categories:
+            resources = self.queryset.filter(category=category)
+            if resources.exists():
+                category_data = EResourceCategorySerializer(category).data
+                category_data['resources'] = EResourceSerializer(
+                    resources, many=True, context={'request': request}
+                ).data
+                result.append(category_data)
+        
+        return Response(result)
+    
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """Получить статистику по ресурсам"""
+        total = self.queryset.count()
+        online = self.queryset.filter(status='online').count()
+        popular = self.queryset.filter(is_popular=True).count()
+        total_users = sum(resource.users_count for resource in self.queryset.all())
+        
+        stats = {
+            'total': total,
+            'online': online,
+            'popular': popular,
+            'total_users': total_users
+        }
+        
+        return Response(stats)

@@ -2,6 +2,228 @@ from django.db import models
 from django.utils import timezone
 
 
+class QualityPrinciple(models.Model):
+    """Принципы системы менеджмента качества"""
+    title = models.CharField(max_length=200, verbose_name="Название принципа")
+    title_kg = models.CharField(max_length=200, verbose_name="Название принципа (кыргызский)", blank=True)
+    title_en = models.CharField(max_length=200, verbose_name="Название принципа (английский)", blank=True)
+    
+    description = models.TextField(verbose_name="Описание принципа")
+    description_kg = models.TextField(verbose_name="Описание принципа (кыргызский)", blank=True)
+    description_en = models.TextField(verbose_name="Описание принципа (английский)", blank=True)
+    
+    icon = models.CharField(max_length=50, verbose_name="Иконка", default="🌟")
+    order = models.PositiveIntegerField(verbose_name="Порядок отображения", default=0)
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Принцип качества"
+        verbose_name_plural = "Принципы качества"
+        ordering = ['order']
+    
+    def __str__(self):
+        return self.title
+
+
+class QualityDocument(models.Model):
+    """Документы системы менеджмента качества"""
+    DOCUMENT_TYPES = [
+        ('pdf', 'PDF'),
+        ('doc', 'DOC'),
+        ('docx', 'DOCX'),
+        ('xls', 'XLS'),
+        ('xlsx', 'XLSX'),
+    ]
+    
+    DOCUMENT_CATEGORIES = [
+        ('policy', 'Политика качества'),
+        ('manual', 'Руководство по качеству'),
+        ('procedure', 'Процедуры'),
+        ('instruction', 'Рабочие инструкции'),
+        ('record', 'Записи'),
+        ('regulation', 'Положения'),
+        ('standard', 'Стандарты'),
+    ]
+    
+    title = models.CharField(max_length=200, verbose_name="Название документа")
+    title_kg = models.CharField(max_length=200, verbose_name="Название документа (KG)", blank=True)
+    title_en = models.CharField(max_length=200, verbose_name="Название документа (EN)", blank=True)
+    
+    description = models.TextField(verbose_name="Описание", blank=True)
+    description_kg = models.TextField(verbose_name="Описание (KG)", blank=True)
+    description_en = models.TextField(verbose_name="Описание (EN)", blank=True)
+    
+    category = models.CharField(max_length=20, choices=DOCUMENT_CATEGORIES, verbose_name="Категория")
+    document_type = models.CharField(max_length=10, choices=DOCUMENT_TYPES, verbose_name="Тип файла")
+    file_size = models.CharField(max_length=20, verbose_name="Размер файла", blank=True)
+    file_path = models.FileField(upload_to='hsm/documents/', verbose_name="Файл", blank=True, null=True)
+    external_url = models.URLField(verbose_name="Внешняя ссылка", blank=True)
+    
+    version = models.CharField(max_length=20, verbose_name="Версия", default="1.0")
+    approval_date = models.DateField(verbose_name="Дата утверждения", null=True, blank=True)
+    effective_date = models.DateField(verbose_name="Дата вступления в силу", null=True, blank=True)
+    expiry_date = models.DateField(verbose_name="Дата истечения", null=True, blank=True)
+    
+    order = models.PositiveIntegerField(verbose_name="Порядок отображения", default=0)
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    download_count = models.PositiveIntegerField(default=0, verbose_name="Количество скачиваний")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Документ качества"
+        verbose_name_plural = "Документы качества"
+        ordering = ['category', 'order']
+    
+    def __str__(self):
+        return f"{self.title} v{self.version}"
+
+
+class QualityProcessGroup(models.Model):
+    """Группы процессов системы менеджмента качества"""
+    title = models.CharField(max_length=200, verbose_name="Название группы процессов")
+    title_kg = models.CharField(max_length=200, verbose_name="Название группы процессов (KG)", blank=True)
+    title_en = models.CharField(max_length=200, verbose_name="Название группы процессов (EN)", blank=True)
+    
+    description = models.TextField(verbose_name="Описание группы", blank=True)
+    description_kg = models.TextField(verbose_name="Описание группы (KG)", blank=True)
+    description_en = models.TextField(verbose_name="Описание группы (EN)", blank=True)
+    
+    icon = models.CharField(max_length=50, verbose_name="Иконка", default="🔄")
+    order = models.PositiveIntegerField(verbose_name="Порядок отображения", default=0)
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Группа процессов"
+        verbose_name_plural = "Группы процессов"
+        ordering = ['order']
+    
+    def __str__(self):
+        return self.title
+
+
+class QualityProcess(models.Model):
+    """Процессы системы менеджмента качества"""
+    group = models.ForeignKey(QualityProcessGroup, on_delete=models.CASCADE, related_name='processes', verbose_name="Группа процессов")
+    
+    title = models.CharField(max_length=200, verbose_name="Название процесса")
+    title_kg = models.CharField(max_length=200, verbose_name="Название процесса (KG)", blank=True)
+    title_en = models.CharField(max_length=200, verbose_name="Название процесса (EN)", blank=True)
+    
+    description = models.TextField(verbose_name="Описание процесса", blank=True)
+    description_kg = models.TextField(verbose_name="Описание процесса (KG)", blank=True)
+    description_en = models.TextField(verbose_name="Описание процесса (EN)", blank=True)
+    
+    responsible_person = models.CharField(max_length=200, verbose_name="Ответственное лицо", blank=True)
+    responsible_department = models.CharField(max_length=200, verbose_name="Ответственное подразделение", blank=True)
+    
+    order = models.PositiveIntegerField(verbose_name="Порядок отображения", default=0)
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Процесс качества"
+        verbose_name_plural = "Процессы качества"
+        ordering = ['group__order', 'order']
+    
+    def __str__(self):
+        return f"{self.group.title} - {self.title}"
+
+
+class QualityStatistic(models.Model):
+    """Статистика системы менеджмента качества"""
+    title = models.CharField(max_length=200, verbose_name="Название показателя")
+    title_kg = models.CharField(max_length=200, verbose_name="Название показателя (KG)", blank=True)
+    title_en = models.CharField(max_length=200, verbose_name="Название показателя (EN)", blank=True)
+    
+    value = models.CharField(max_length=50, verbose_name="Значение")
+    unit = models.CharField(max_length=50, verbose_name="Единица измерения", blank=True)
+    
+    description = models.TextField(verbose_name="Описание", blank=True)
+    description_kg = models.TextField(verbose_name="Описание (KG)", blank=True)
+    description_en = models.TextField(verbose_name="Описание (EN)", blank=True)
+    
+    icon = models.CharField(max_length=50, verbose_name="Иконка", default="📊")
+    order = models.PositiveIntegerField(verbose_name="Порядок отображения", default=0)
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Статистика качества"
+        verbose_name_plural = "Статистика качества"
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.title}: {self.value}"
+
+
+class QualityAdvantage(models.Model):
+    """Преимущества системы менеджмента качества"""
+    title = models.CharField(max_length=200, verbose_name="Преимущество")
+    title_kg = models.CharField(max_length=200, verbose_name="Преимущество (KG)", blank=True)
+    title_en = models.CharField(max_length=200, verbose_name="Преимущество (EN)", blank=True)
+    
+    description = models.TextField(verbose_name="Описание", blank=True)
+    description_kg = models.TextField(verbose_name="Описание (KG)", blank=True)
+    description_en = models.TextField(verbose_name="Описание (EN)", blank=True)
+    
+    icon = models.CharField(max_length=50, verbose_name="Иконка", default="✓")
+    order = models.PositiveIntegerField(verbose_name="Порядок отображения", default=0)
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Преимущество качества"
+        verbose_name_plural = "Преимущества качества"
+        ordering = ['order']
+    
+    def __str__(self):
+        return self.title
+
+
+class QualitySettings(models.Model):
+    """Общие настройки системы менеджмента качества"""
+    title = models.CharField(max_length=200, verbose_name="Заголовок страницы")
+    title_kg = models.CharField(max_length=200, verbose_name="Заголовок страницы (KG)", blank=True)
+    title_en = models.CharField(max_length=200, verbose_name="Заголовок страницы (EN)", blank=True)
+    
+    description = models.TextField(verbose_name="Описание")
+    description_kg = models.TextField(verbose_name="Описание (KG)", blank=True)
+    description_en = models.TextField(verbose_name="Описание (EN)", blank=True)
+    
+    about_text = models.TextField(verbose_name="О системе качества")
+    about_text_kg = models.TextField(verbose_name="О системе качества (KG)", blank=True)
+    about_text_en = models.TextField(verbose_name="О системе качества (EN)", blank=True)
+    
+    iso_standard = models.CharField(max_length=50, verbose_name="Стандарт ISO", default="ISO 9001:2015")
+    compliance_percentage = models.CharField(max_length=10, verbose_name="Процент соответствия", default="100%")
+    
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Настройки качества"
+        verbose_name_plural = "Настройки качества"
+    
+    def __str__(self):
+        return self.title
+
+
 class Leadership(models.Model):
     """Руководство ВШМ"""
     LEADERSHIP_TYPES = [
