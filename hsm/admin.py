@@ -1,5 +1,173 @@
 from django.contrib import admin
-from .models import Faculty, Accreditation, Leadership
+from .models import (
+    Faculty, Accreditation, Leadership,
+    QualityPrinciple, QualityDocument, QualityProcessGroup,
+    QualityProcess, QualityStatistic, QualityAdvantage, QualitySettings
+)
+
+
+@admin.register(QualityPrinciple)
+class QualityPrincipleAdmin(admin.ModelAdmin):
+    list_display = ['title', 'icon', 'order', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['title', 'title_kg', 'title_en', 'description']
+    list_editable = ['order', 'is_active']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('title', 'title_kg', 'title_en', 'icon')
+        }),
+        ('Описание', {
+            'fields': ('description', 'description_kg', 'description_en')
+        }),
+        ('Настройки', {
+            'fields': ('order', 'is_active', 'created_at', 'updated_at')
+        }),
+    )
+
+
+@admin.register(QualityDocument)
+class QualityDocumentAdmin(admin.ModelAdmin):
+    list_display = ['title', 'category', 'document_type', 'version', 'approval_date', 'download_count', 'order', 'is_active']
+    list_filter = ['category', 'document_type', 'is_active', 'approval_date']
+    search_fields = ['title', 'title_kg', 'title_en', 'description']
+    list_editable = ['order', 'is_active']
+    readonly_fields = ['created_at', 'updated_at', 'download_count']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('title', 'title_kg', 'title_en', 'category')
+        }),
+        ('Описание', {
+            'fields': ('description', 'description_kg', 'description_en')
+        }),
+        ('Файл', {
+            'fields': ('document_type', 'file_size', 'file_path', 'external_url')
+        }),
+        ('Версия и даты', {
+            'fields': ('version', 'approval_date', 'effective_date', 'expiry_date')
+        }),
+        ('Настройки', {
+            'fields': ('order', 'is_active', 'download_count', 'created_at', 'updated_at')
+        }),
+    )
+
+
+@admin.register(QualityProcessGroup)
+class QualityProcessGroupAdmin(admin.ModelAdmin):
+    list_display = ['title', 'icon', 'order', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['title', 'title_kg', 'title_en', 'description']
+    list_editable = ['order', 'is_active']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('title', 'title_kg', 'title_en', 'icon')
+        }),
+        ('Описание', {
+            'fields': ('description', 'description_kg', 'description_en')
+        }),
+        ('Настройки', {
+            'fields': ('order', 'is_active', 'created_at', 'updated_at')
+        }),
+    )
+
+
+@admin.register(QualityProcess)
+class QualityProcessAdmin(admin.ModelAdmin):
+    list_display = ['title', 'group', 'responsible_person', 'responsible_department', 'order', 'is_active']
+    list_filter = ['group', 'is_active']
+    search_fields = ['title', 'title_kg', 'title_en', 'responsible_person', 'responsible_department']
+    list_editable = ['order', 'is_active']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('group', 'title', 'title_kg', 'title_en')
+        }),
+        ('Описание', {
+            'fields': ('description', 'description_kg', 'description_en')
+        }),
+        ('Ответственные', {
+            'fields': ('responsible_person', 'responsible_department')
+        }),
+        ('Настройки', {
+            'fields': ('order', 'is_active', 'created_at', 'updated_at')
+        }),
+    )
+
+
+@admin.register(QualityStatistic)
+class QualityStatisticAdmin(admin.ModelAdmin):
+    list_display = ['title', 'value', 'unit', 'icon', 'order', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['title', 'title_kg', 'title_en', 'value']
+    list_editable = ['order', 'is_active']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('title', 'title_kg', 'title_en', 'icon')
+        }),
+        ('Значение', {
+            'fields': ('value', 'unit')
+        }),
+        ('Описание', {
+            'fields': ('description', 'description_kg', 'description_en')
+        }),
+        ('Настройки', {
+            'fields': ('order', 'is_active', 'created_at', 'updated_at')
+        }),
+    )
+
+
+@admin.register(QualityAdvantage)
+class QualityAdvantageAdmin(admin.ModelAdmin):
+    list_display = ['title', 'icon', 'order', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['title', 'title_kg', 'title_en', 'description']
+    list_editable = ['order', 'is_active']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('title', 'title_kg', 'title_en', 'icon')
+        }),
+        ('Описание', {
+            'fields': ('description', 'description_kg', 'description_en')
+        }),
+        ('Настройки', {
+            'fields': ('order', 'is_active', 'created_at', 'updated_at')
+        }),
+    )
+
+
+@admin.register(QualitySettings)
+class QualitySettingsAdmin(admin.ModelAdmin):
+    list_display = ['title', 'iso_standard', 'compliance_percentage', 'is_active']
+    list_filter = ['is_active']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Заголовок и описание', {
+            'fields': ('title', 'title_kg', 'title_en', 'description', 'description_kg', 'description_en')
+        }),
+        ('О системе качества', {
+            'fields': ('about_text', 'about_text_kg', 'about_text_en')
+        }),
+        ('Стандарты', {
+            'fields': ('iso_standard', 'compliance_percentage')
+        }),
+        ('Настройки', {
+            'fields': ('is_active', 'created_at', 'updated_at')
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        # Разрешаем создавать только если нет активных записей
+        return not QualitySettings.objects.filter(is_active=True).exists()
 
 
 @admin.register(Leadership)

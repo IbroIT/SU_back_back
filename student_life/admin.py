@@ -8,7 +8,8 @@ from .models import (
     AcademicRegulation, AcademicRegulationSection, AcademicRegulationRule,
     DownloadableDocument,
     StudentGuide, GuideRequirement, GuideStep, GuideStepDetail,
-    StudentAppeal, PhotoAlbum, Photo, VideoContent, StudentLifeStatistic
+    StudentAppeal, PhotoAlbum, Photo, VideoContent, StudentLifeStatistic,
+    EResourceCategory, EResource, EResourceFeature
 )
 
 
@@ -501,6 +502,71 @@ class StudentLifeStatisticAdmin(admin.ModelAdmin):
         }),
         ('Английский', {
             'fields': ['label_en', 'description_en'],
+            'classes': ['collapse']
+        }),
+    )
+
+
+# =============================================================================
+# ADMIN ДЛЯ ЭЛЕКТРОННЫХ РЕСУРСОВ
+# =============================================================================
+
+@admin.register(EResourceCategory)
+class EResourceCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name_ru', 'icon', 'color', 'count', 'order', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['name_ru', 'name_kg', 'name_en']
+    ordering = ['order', 'name_ru']
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ['icon', 'color', 'order', 'is_active']
+        }),
+        ('Русский', {
+            'fields': ['name_ru'],
+        }),
+        ('Кыргызский', {
+            'fields': ['name_kg'],
+            'classes': ['collapse']
+        }),
+        ('Английский', {
+            'fields': ['name_en'],
+            'classes': ['collapse']
+        }),
+    )
+    
+    def count(self, obj):
+        return obj.count
+    count.short_description = 'Количество ресурсов'
+
+
+class EResourceFeatureInline(admin.TabularInline):
+    model = EResourceFeature
+    extra = 1
+    fields = ['text_ru', 'text_kg', 'text_en', 'order']
+
+
+@admin.register(EResource)
+class EResourceAdmin(admin.ModelAdmin):
+    list_display = ['title_ru', 'category', 'status', 'users_count', 'is_popular', 'is_active', 'order']
+    list_filter = ['category', 'status', 'is_popular', 'is_active']
+    search_fields = ['title_ru', 'title_kg', 'title_en', 'description_ru']
+    ordering = ['order', 'title_ru']
+    inlines = [EResourceFeatureInline]
+    
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ['category', 'icon', 'color', 'url', 'users_count', 'status', 'is_popular', 'is_active', 'order']
+        }),
+        ('Русский', {
+            'fields': ['title_ru', 'description_ru'],
+        }),
+        ('Кыргызский', {
+            'fields': ['title_kg', 'description_kg'],
+            'classes': ['collapse']
+        }),
+        ('Английский', {
+            'fields': ['title_en', 'description_en'],
             'classes': ['collapse']
         }),
     )

@@ -1,14 +1,165 @@
-from rest_framework import generics, viewsets
+from rest_framework import generics, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.db.models import Q
-from .models import Faculty, Accreditation, Leadership
+from django.http import Http404
+from .models import (
+    Faculty, Accreditation, Leadership,
+    QualityPrinciple, QualityDocument, QualityProcessGroup,
+    QualityProcess, QualityStatistic, QualityAdvantage, QualitySettings
+)
 from .serializers import (
     FacultySerializer, 
     FacultyListSerializer,
     AccreditationSerializer,
     LeadershipSerializer,
+    QualityPrincipleSerializer,
+    QualityDocumentSerializer,
+    QualityProcessGroupSerializer,
+    QualityProcessSerializer,
+    QualityStatisticSerializer,
+    QualityAdvantageSerializer,
+    QualitySettingsSerializer,
+    QualityManagementSystemSerializer
 )
+
+
+class QualityManagementSystemView(APIView):
+    """API для получения всех данных системы менеджмента качества"""
+    
+    def get(self, request):
+        try:
+            # Получаем основные настройки (должна быть только одна запись)
+            settings = QualitySettings.objects.filter(is_active=True).first()
+            
+            # Получаем все активные данные
+            principles = QualityPrinciple.objects.filter(is_active=True).order_by('order')
+            documents = QualityDocument.objects.filter(is_active=True).order_by('category', 'order')
+            process_groups = QualityProcessGroup.objects.filter(is_active=True).prefetch_related('processes').order_by('order')
+            statistics = QualityStatistic.objects.filter(is_active=True).order_by('order')
+            advantages = QualityAdvantage.objects.filter(is_active=True).order_by('order')
+            
+            # Сериализуем данные
+            data = {
+                'settings': QualitySettingsSerializer(settings, context={'request': request}).data if settings else None,
+                'principles': QualityPrincipleSerializer(principles, many=True, context={'request': request}).data,
+                'documents': QualityDocumentSerializer(documents, many=True, context={'request': request}).data,
+                'process_groups': QualityProcessGroupSerializer(process_groups, many=True, context={'request': request}).data,
+                'statistics': QualityStatisticSerializer(statistics, many=True, context={'request': request}).data,
+                'advantages': QualityAdvantageSerializer(advantages, many=True, context={'request': request}).data,
+            }
+            
+            return Response(data)
+        except Exception as e:
+            return Response(
+                {'error': 'Ошибка получения данных системы качества', 'detail': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class QualityPrincipleViewSet(viewsets.ReadOnlyModelViewSet):
+    """API для принципов качества"""
+    queryset = QualityPrinciple.objects.filter(is_active=True).order_by('order')
+    serializer_class = QualityPrincipleSerializer
+
+
+class QualityDocumentViewSet(viewsets.ReadOnlyModelViewSet):
+    """API для документов качества"""
+    queryset = QualityDocument.objects.filter(is_active=True).order_by('category', 'order')
+    serializer_class = QualityDocumentSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        category = self.request.query_params.get('category', None)
+        
+        if category:
+            queryset = queryset.filter(category=category)
+            
+        return queryset
+    
+    @action(detail=True, methods=['post'])
+    def download(self, request, pk=None):
+        """Увеличить счетчик скачиваний документа"""
+        try:
+            document = self.get_object()
+            document.download_count += 1
+            document.save(update_fields=['download_count'])
+            return Response({'success': True, 'download_count': document.download_count})
+        except Exception as e:
+            return Response(
+                {'error': 'Ошибка обновления счетчика скачиваний', 'detail': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'])
+    def by_category(self, request):
+        """Получить документы сгруппированные по категориям"""
+        categories = dict(QualityDocument.DOCUMENT_CATEGORIES)
+        result = {}
+        
+        for category_key, category_name in categories.items():
+            documents = self.queryset.filter(category=category_key)
+            result[category_key] = {
+                'name': category_name,
+                'documents': QualityDocumentSerializer(documents, many=True, context={'request': request}).data
+            }
+        
+        return Response(result)
+
+
+class QualityProcessGroupViewSet(viewsets.ReadOnlyModelViewSet):
+    """API для групп процессов качества"""
+    queryset = QualityProcessGroup.objects.filter(is_active=True).prefetch_related('processes').order_by('order')
+    serializer_class = QualityProcessGroupSerializer
+
+
+class QualityProcessViewSet(viewsets.ReadOnlyModelViewSet):
+    """API для процессов качества"""
+    queryset = QualityProcess.objects.filter(is_active=True).select_related('group').order_by('group__order', 'order')
+    serializer_class = QualityProcessSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        group_id = self.request.query_params.get('group', None)
+        
+        if group_id:
+            queryset = queryset.filter(group_id=group_id)
+            
+        return queryset
+
+
+class QualityStatisticViewSet(viewsets.ReadOnlyModelViewSet):
+    """API для статистики качества"""
+    queryset = QualityStatistic.objects.filter(is_active=True).order_by('order')
+    serializer_class = QualityStatisticSerializer
+
+
+class QualityAdvantageViewSet(viewsets.ReadOnlyModelViewSet):
+    """API для преимуществ качества"""
+    queryset = QualityAdvantage.objects.filter(is_active=True).order_by('order')
+    serializer_class = QualityAdvantageSerializer
+
+
+class QualitySettingsView(APIView):
+    """API для настроек системы качества"""
+    
+    def get(self, request):
+        try:
+            settings = QualitySettings.objects.filter(is_active=True).first()
+            if settings:
+                serializer = QualitySettingsSerializer(settings, context={'request': request})
+                return Response(serializer.data)
+            else:
+                return Response(
+                    {'error': 'Настройки системы качества не найдены'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        except Exception as e:
+            return Response(
+                {'error': 'Ошибка получения настроек', 'detail': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class LeadershipViewSet(viewsets.ReadOnlyModelViewSet):

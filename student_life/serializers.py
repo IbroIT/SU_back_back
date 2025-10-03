@@ -3,7 +3,8 @@ from .models import (
     PartnerOrganization, StudentAppeal, OrganizationSpecialization,
     PhotoAlbum, Photo, VideoContent, StudentLifeStatistic,
     InternshipRequirement, InternshipRequirementItem, ReportTemplate,
-    StudentGuide, GuideRequirement, GuideStep, GuideStepDetail
+    StudentGuide, GuideRequirement, GuideStep, GuideStepDetail,
+    EResourceCategory, EResource, EResourceFeature
 )
 
 
@@ -362,4 +363,46 @@ class StudentGuideSerializer(serializers.ModelSerializer):
             'contact_info_ru', 'contact_info_kg', 'contact_info_en',
             'category', 'icon', 'order', 'is_active', 'created_at',
             'requirements', 'steps'
+        ]
+
+
+# =============================================================================
+# СЕРИАЛИЗАТОРЫ ДЛЯ ЭЛЕКТРОННЫХ РЕСУРСОВ
+# =============================================================================
+
+class EResourceFeatureSerializer(serializers.ModelSerializer):
+    """Сериализатор для особенностей электронных ресурсов"""
+    
+    class Meta:
+        model = EResourceFeature
+        fields = ['id', 'text_ru', 'text_kg', 'text_en', 'order']
+
+
+class EResourceCategorySerializer(serializers.ModelSerializer):
+    """Сериализатор для категорий электронных ресурсов"""
+    count = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = EResourceCategory
+        fields = [
+            'id', 'name_ru', 'name_kg', 'name_en',
+            'icon', 'color', 'count', 'order', 'is_active'
+        ]
+
+
+class EResourceSerializer(serializers.ModelSerializer):
+    """Сериализатор для электронных ресурсов"""
+    features = EResourceFeatureSerializer(many=True, read_only=True)
+    category_data = EResourceCategorySerializer(source='category', read_only=True)
+    users_display = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = EResource
+        fields = [
+            'id', 'title_ru', 'title_kg', 'title_en',
+            'description_ru', 'description_kg', 'description_en',
+            'icon', 'color', 'url', 'users_count', 'users_display',
+            'status', 'is_popular', 'order', 'is_active',
+            'category', 'category_data', 'features',
+            'created_at', 'updated_at'
         ]

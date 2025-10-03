@@ -1,5 +1,131 @@
 from rest_framework import serializers
-from .models import Faculty, Accreditation, Leadership
+from .models import (
+    Faculty, Accreditation, Leadership,
+    QualityPrinciple, QualityDocument, QualityProcessGroup, 
+    QualityProcess, QualityStatistic, QualityAdvantage, QualitySettings
+)
+
+
+class QualityPrincipleSerializer(serializers.ModelSerializer):
+    """Сериализатор для принципов качества"""
+    
+    class Meta:
+        model = QualityPrinciple
+        fields = [
+            'id', 'title', 'title_kg', 'title_en',
+            'description', 'description_kg', 'description_en',
+            'icon', 'order', 'is_active'
+        ]
+
+
+class QualityDocumentSerializer(serializers.ModelSerializer):
+    """Сериализатор для документов качества"""
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    document_type_display = serializers.CharField(source='get_document_type_display', read_only=True)
+    file_url = serializers.SerializerMethodField()
+    formatted_date = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = QualityDocument
+        fields = [
+            'id', 'title', 'title_kg', 'title_en',
+            'description', 'description_kg', 'description_en',
+            'category', 'category_display', 'document_type', 'document_type_display',
+            'file_size', 'file_url', 'external_url', 'version',
+            'approval_date', 'formatted_date', 'download_count', 'order'
+        ]
+    
+    def get_file_url(self, obj):
+        if obj.file_path:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file_path.url)
+            return obj.file_path.url
+        return obj.external_url
+    
+    def get_formatted_date(self, obj):
+        if obj.approval_date:
+            return obj.approval_date.strftime('%d.%m.%Y')
+        return obj.created_at.strftime('%d.%m.%Y')
+
+
+class QualityProcessSerializer(serializers.ModelSerializer):
+    """Сериализатор для процессов качества"""
+    
+    class Meta:
+        model = QualityProcess
+        fields = [
+            'id', 'title', 'title_kg', 'title_en',
+            'description', 'description_kg', 'description_en',
+            'responsible_person', 'responsible_department', 'order'
+        ]
+
+
+class QualityProcessGroupSerializer(serializers.ModelSerializer):
+    """Сериализатор для групп процессов качества"""
+    processes = QualityProcessSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = QualityProcessGroup
+        fields = [
+            'id', 'title', 'title_kg', 'title_en',
+            'description', 'description_kg', 'description_en',
+            'icon', 'order', 'processes'
+        ]
+
+
+class QualityStatisticSerializer(serializers.ModelSerializer):
+    """Сериализатор для статистики качества"""
+    display_value = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = QualityStatistic
+        fields = [
+            'id', 'title', 'title_kg', 'title_en',
+            'value', 'unit', 'display_value',
+            'description', 'description_kg', 'description_en',
+            'icon', 'order'
+        ]
+    
+    def get_display_value(self, obj):
+        if obj.unit:
+            return f"{obj.value} {obj.unit}"
+        return obj.value
+
+
+class QualityAdvantageSerializer(serializers.ModelSerializer):
+    """Сериализатор для преимуществ качества"""
+    
+    class Meta:
+        model = QualityAdvantage
+        fields = [
+            'id', 'title', 'title_kg', 'title_en',
+            'description', 'description_kg', 'description_en',
+            'icon', 'order'
+        ]
+
+
+class QualitySettingsSerializer(serializers.ModelSerializer):
+    """Сериализатор для настроек качества"""
+    
+    class Meta:
+        model = QualitySettings
+        fields = [
+            'id', 'title', 'title_kg', 'title_en',
+            'description', 'description_kg', 'description_en',
+            'about_text', 'about_text_kg', 'about_text_en',
+            'iso_standard', 'compliance_percentage'
+        ]
+
+
+class QualityManagementSystemSerializer(serializers.Serializer):
+    """Комплексный сериализатор для всей системы менеджмента качества"""
+    settings = QualitySettingsSerializer(read_only=True)
+    principles = QualityPrincipleSerializer(many=True, read_only=True)
+    documents = QualityDocumentSerializer(many=True, read_only=True)
+    process_groups = QualityProcessGroupSerializer(many=True, read_only=True)
+    statistics = QualityStatisticSerializer(many=True, read_only=True)
+    advantages = QualityAdvantageSerializer(many=True, read_only=True)
 
 
 class LeadershipSerializer(serializers.ModelSerializer):
